@@ -74,10 +74,14 @@ check_seen(Name, Reading, State) ->
 		% Match if we DO NOT have the key in our state dict,
 		% but we DO have it in our seen set
 		{false, true} ->
-			% Send an alert when the device comes back.
+			error_logger:info_msg("Device came back:  ~p @ ~p",
+				[Name, Reading#tstate.lastreading]),
+			% Send an alert regarding this returned device
 			State#estate.alertpid !
-				{alert, Name, Reading#tstate.lastreading,
-					{came_back, Reading#tstate.lastseen}},
+				{alert, Name, Reading#tstate.lastreading, came_back};
+		{_, false} ->
+			error_logger:info_msg("New device:  ~p @ ~p",
+				[Name, Reading#tstate.lastreading]),
 			% The return value will now include this device
 			sets:add_element(Name, State#estate.seen);
 		_ -> State#estate.seen

@@ -8,18 +8,17 @@
 -behavior(gen_event).
 
 -record(tstate, {lastseen, lastalert, lastreading}).
--record(mstate, {names, alerts, ranges, states}).
+-record(mstate, {names, states}).
 
 % Init
 init(_Args) ->
 	error_logger:info_msg("Starting mailer.~n", []),
 	Names = environ_utilities:get_therm_map(),
-	Ranges = environ_utilities:get_env_dict(ranges),
-	Alerts = environ_utilities:get_env(notifications, []),
-	{ok, #mstate{names=Names, alerts=Alerts, ranges=Ranges, states=dict:new()}}.
+	{ok, #mstate{names=Names, states=dict:new()}}.
 
 % Find the range for the given device
-getRange(Name, Ranges) ->
+getRange(Name) ->
+	Ranges = environ_utilities:get_env_dict(ranges),
 	case dict:find(Name, Ranges) of
 		{ok, TheRange} -> TheRange;
 		_ ->
@@ -40,13 +39,16 @@ alert(Name, Val, Type, State) ->
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
 	Body = io_lib:format("~s:~.2f (~p)~n", [Name, Val, Type]),
-	{ok, MailServer} = smtp_fsm:start("mail"),
+	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
+	{ok, MailServer} = smtp_fsm:start(MailServerHost),
 	{ok, _Status} = smtp_fsm:ehlo(MailServer),
 	% Send email to everyone who should receive one
+	Alerts = environ_utilities:get_env(notifications, []),
 	lists:foreach(fun (To) ->
-			sendMessage(MailServer, "dustin+tempalert@spy.net",
+			sendMessage(MailServer,
+				environ_utilities:get_env(mail_sender, "dustin@spy.net"),
 				To, Subject, Body)
-		end, State#mstate.alerts),
+		end, Alerts),
 	smtp_fsm:close(MailServer),
 	% Now return the new reading val (an alert)
 	updateReading(Name, Val, State, true).
@@ -74,10 +76,7 @@ outOfRange(Name, Val, Type, State) ->
 	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p\n",
 		[Name, Val, Type]),
 	% Find the minimum amount of time that must pass between alerts
-	MinAlertInterval = case application:get_env(min_alert_interval) of
-				{ok, V} -> V;
-				_ -> 3600
-			end,
+	MinAlertInterval = environ_utilities:get_env(min_alert_interval, 3600),
 	% Conditionally deliver the alert.  If it's been long enough, or we can't
 	% remember sending an alert, do it.
 	case dict:find(Name, State#mstate.states) of
@@ -93,7 +92,8 @@ outOfRange(Name, Val, Type, State) ->
 					error_logger:error_msg(
 						"Last alert for ~p sent ~ps ago, holding~n",
 						[Name, Tdiff]),
-					updateReading(Name, Val, State, true)
+					% Say false here so it won't count this as an alert
+					updateReading(Name, Val, State, false)
 			end;
 		_ ->
 			% Go ahead and send the alert.
@@ -117,10 +117,7 @@ checkRange(Name, Key, Val, Range, State) ->
 
 % Remove any TStates that may be too old, and alert on them
 cleanupTStates(TStates, State) ->
-	MaxAge = case application:get_env(max_ttl_age) of
-			{ok, V} -> V;
-			_ -> 600
-		end,
+	MaxAge = environ_utilities:get_env(max_ttl_age, 600),
 	dict:fold(fun(K, V, Acc) ->
 			% V is a tstate
 			% io:format("~p's record:  ~p~n", [K, V]),
@@ -142,12 +139,10 @@ handle_event({reading, Key, Val, Vals}, State) ->
 			{ok, TheName} -> TheName;
 			_ -> Key
 		end,
-	% Get the acceptable range for this event
-	Range = getRange(Name, State#mstate.ranges),
 	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p~n",
 		% [Name, Val, Range]),
 	% Check the range and get the new reading
-	NewReading = checkRange(Name, Key, Val, Range, State),
+	NewReading = checkRange(Name, Key, Val, getRange(Name), State),
 	% Add the new reading
 	NewReadingState = dict:update(Name, fun(_) -> NewReading end,
 						NewReading, State#mstate.states),

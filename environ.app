@@ -31,7 +31,9 @@
 					]},
 					{notifications, [
 						"dustin@spy.net"
-					]}
+					]},
+					{mail_server, "mail.west.spy.net"},
+					{mail_sender, "dustin+tempalert@spy.net"}
 				]}
 ]}.
 

@@ -20,7 +20,7 @@ clean:
 	rm -f $(MODULES) environ.{boot,script} environ.tar.gz
 
 .erl.beam: $<
-	erlc -W $<
+	erlc -W -v $<
 
 .rel.boot: $<
 	erlc $<

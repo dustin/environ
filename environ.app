@@ -9,7 +9,10 @@
          {registered, [temp_listener, temp_listener_events]},
          {applications, [kernel,stdlib,smtp_client]},
 		 {mod, {environ, []}},
-		 {env, [{therms, [
+		 {env, [
+		 		{min_alert_interval, 3600},
+				{max_ttl_age, 900},
+		 		{therms, [
 						{"1081841E000000DF", "bedroom"},
 						{"10258D2A000000EA", "backyard"},
 						{"10C8892A00000096", "livingroom"},
@@ -20,7 +23,10 @@
 						% {"21508400004025AF", "kitchen"},
 					]},
 					{ranges, [
-						{"newmachineroom", {15, 20}},
+						{"newmachineroom", {13, 26}},
+						{"bedroom", {10, 31}},
+						{"livingroom", {13, 30}},
+						{"guestroom", {8, 30}},
 						{"--default--", {-50,50}}
 					]},
 					{notifications, [

@@ -38,7 +38,7 @@ alert(Name, Val, Type, State) ->
 	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p\n",
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
-	Body = io_lib:format("~p:~p (~p)~n", [Name, Val, Type]),
+	Body = io_lib:format("~s:~.2f (~p)~n", [Name, Val, Type]),
 	lists:foreach(fun (To) ->
 			sendMessage("dustin+tempalert@spy.net", To, Subject, Body)
 		end, State#mstate.alerts).

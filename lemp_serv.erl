@@ -54,7 +54,7 @@ lemp(Socket, Id) ->
 
 lemp_exit(Reason, Id) ->
 	error_logger:info_msg("lemp:  deleting handler~n", []),
-	temp_listener:delete_handler({lemp_handler, Id}, []),
+	ok = temp_listener:delete_handler({lemp_handler, Id}, []),
 	exit(closed).
 
 lemp_loop(Socket, Id) ->

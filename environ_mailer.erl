@@ -129,7 +129,7 @@ cleanupTStates(TStates, State) ->
 					error_logger:error_msg("~p is too old!  ~psecs~n",
 						[K, TAge]),
 					alert(K, V#tstate.lastreading, {too_old, MaxAge}, State),
-					Acc;
+					dict:erase(K, Acc);
 				true ->
 					Acc
 			end

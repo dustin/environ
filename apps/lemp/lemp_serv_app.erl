@@ -1,8 +1,8 @@
 %%
-%% arch-tag: 9C4758FA-9D70-11D8-ABD2-000A957659CC
+%% arch-tag: 4FA4A3D7-A231-11D8-A34F-000A957659CC
 %%
 
--module(environ).
+-module(lemp_serv_app).
 
 -behavior(application).
 
@@ -12,16 +12,12 @@
 
 % easy start
 start() ->
-	application:start(environ).
+	application:start(lemp_serv).
 
 % application stuff
 start(_Type, _Args) ->
-	error_logger:info_msg("Starting environ", []),
-	application:start(temp_listener, permanent),
-	application:start(lemp_serv, permanent),
-	application:start(smtp_client),
-	application:start(env_alert, permanent),
-	{ok, self()}.
+	error_logger:info_msg("Starting lemp_serv", []),
+	lemp_serv:start_link().
 
 stop(_State) -> ok.
 

@@ -1,27 +1,32 @@
 %%
-%% arch-tag: 9C4758FA-9D70-11D8-ABD2-000A957659CC
+%% arch-tag: 920D3984-A232-11D8-93DC-000A957659CC
 %%
 
--module(environ).
+-module(env_alert_app).
 
 -behavior(application).
 
 % Supervisor functions.
 -export([start/0,
+	init/1,
 	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1]).
 
 % easy start
 start() ->
-	application:start(environ).
+	application:start(env_alert).
+
+% supervisor support
+init(_Args) ->
+	{ok, {{one_for_one, 2, 60},
+			[{env_alert, {env_alert, start_link, []},
+				permanent, 5000, worker, [env_alert]}
+			]}}.
 
 % application stuff
 start(_Type, _Args) ->
-	error_logger:info_msg("Starting environ", []),
-	application:start(temp_listener, permanent),
-	application:start(lemp_serv, permanent),
-	application:start(smtp_client),
-	application:start(env_alert, permanent),
-	{ok, self()}.
+	error_logger:info_msg("Starting env_alert", []),
+	supervisor:start_link(?MODULE, []).
+	% env_alert:start_link().
 
 stop(_State) -> ok.
 

@@ -4,13 +4,19 @@
 
 -module(lemp_serv).
 
--export([start/0, start/1, init/1, lemp/3]).
+-export([start/0, start/1, start_link/0, start_link/1, init/1, lemp/3]).
 
 % Starting the server
 start() ->
 	start(8181).
 
 start(PortNum) when integer(PortNum) ->
+	{ok, spawn(?MODULE, init, [PortNum])}.
+
+start_link() ->
+	start_link(8181).
+
+start_link(PortNum) when integer(PortNum) ->
 	{ok, spawn_link(?MODULE, init, [PortNum])}.
 
 %

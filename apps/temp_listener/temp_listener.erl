@@ -18,11 +18,10 @@ start_link() ->
 init() ->
 	% register myself
 	register(?MODULE, self()),
-	% register my event handler
-	gen_event:start_link({local, temp_listener_events}),
-	% Register the handler for the mailer (until I find a better place for this)
-	add_sup_handler(environ_mailer, []),
+	% let me know if anything tries to exit
 	process_flag(trap_exit, true),
+	% register my event handler
+	{ok, _Pid} = gen_event:start_link({local, temp_listener_events}),
 	{ok, GAddr}=inet:getaddr("225.0.0.37", inet),
 	{ok, LAddr}=inet:getaddr("0.0.0.0", inet),
 	{ok, Port} = gen_udp:open(6789, [{add_membership,{GAddr,LAddr}}]),
@@ -39,7 +38,9 @@ loop(Port, Dict) ->
 			Vals = string:tokens(S, "\t"),
 			Key  = lists:nth(2, Vals),
 			Val  = list_to_float(lists:nth(3, Vals)),
-			gen_event:notify(temp_listener_events, {reading, Key, Val, Vals}),
+			Name = environ_utilities:get_therm_name(Key),
+			gen_event:notify(temp_listener_events,
+				{reading, Key, Name, Val, Vals}),
 			loop(Port, dict:update(Key, fun(_) -> Val end, Val, Dict));
 		% A lookup message for a specific serial number
 		{lookup, From, SN} ->
@@ -49,14 +50,10 @@ loop(Port, Dict) ->
 		{getdict, From} ->
 			From ! Dict,
 			loop(Port, Dict);
-		{gen_event_EXIT, environ_mailer, Why} ->
-			error_logger:error_msg("environ_mailer died, restarting:  ~p",
-				[Why]);
 		% Anything else
 		Unhandled ->
 			error_logger:error_msg("temp_listener: Unhandled message:  ~p",
-				[Unhandled]),
-			loop(Port, Dict)
+				[Unhandled])
 		after 180000 ->
 			Reason = "Been too long since I've heard from a thermometer.",
 			error_logger:error_msg("temp_listener: Exiting:  ~p", [Reason]),

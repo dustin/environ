@@ -1,0 +1,22 @@
+% arch-tag: 324C9B8F-A22C-11D8-AE92-000A957659CC
+
+{application, temp_listener,
+	[{description, "Listen to temperature announcements, send local events"},
+	 {vsn, "1.0"},
+	 {modules, [temp_listener]},
+	 {registered, [temp_listener_app,temp_listener,temp_listener_events]},
+	 {applications, [kernel,stdlib]},
+	 {mod, {temp_listener_app, []}},
+	 {env, [
+		{therms, [
+			{"1081841E000000DF", "bedroom"},
+			{"10258D2A000000EA", "backyard"},
+			{"10C8892A00000096", "livingroom"},
+			{"101D8A2A000000F7", "newmachineroom"},
+			{"10E8C214000000E4", "garage"},
+			{"1013A51E00000035", "guestroom"}
+			% {"2183110000C034BB", "dustinkeychain"},
+			% {"21508400004025AF", "kitchen"},
+			]}
+	  ]}
+	]}.

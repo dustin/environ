@@ -1,0 +1,47 @@
+%%
+%% arch-tag: A622F0A4-A232-11D8-9944-000A957659CC
+%%
+
+-module(temp_listener_app).
+
+-behavior(application).
+
+% Supervisor functions.
+-export([start/0,
+	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1,
+	init/1]).
+
+% easy start
+start() ->
+	application:start(temp_listener).
+
+% supervisor support
+init(_Args) ->
+	{ok, {{one_for_one, 2, 60},
+			[{temp_listener, {temp_listener, start_link, []},
+				permanent, 5000, worker, [temp_listener]}
+			]}}.
+
+% application stuff
+start(Type, Args) ->
+	error_logger:info_msg("Starting temp_listener (~p, ~p)", [Type, Args]),
+	supervisor:start_link(?MODULE, []).
+	% temp_listener:start_link().
+
+stop(State) ->
+	error_logger:error_msg("Stopped temp_listener:  ~p", [State]),
+	ok.
+
+config_change(Changed, New, Removed) ->
+	error_logger:info_msg("temp_listener config changed:  [~p, ~p, ~p]",
+		[Changed, New, Removed]),
+	ok.
+
+start_phase(Phase, StartType, PhaseArgs) ->
+	error_logger:info_msg("temp_listener start_phase:  [~p, ~p, ~p]",
+		[Phase, StartType, PhaseArgs]),
+	ok.
+
+prep_stop(State) ->
+	error_logger:info_msg("Prepping temp_listener stop:  ~p", [State]),
+	State.

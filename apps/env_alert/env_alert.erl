@@ -1,37 +1,45 @@
 %%
-%% arch-tag: AABDD3F6-9F1B-11D8-A1EB-000A957659CC
+%% arch-tag: F1E8B3F8-A24E-11D8-9BB7-000A957659CC
 %%
 
--module(environ_mailer).
--export([init/1, handle_event/2, handle_call/2, handle_info/2,
-	code_change/3, terminate/2, startupAlert/1]).
--behavior(gen_event).
+-module(env_alert).
+-export([start/0, start_link/0, init/0, startHandler/1]).
 
--record(tstate, {lastseen, lastalert, lastreading}).
+-record(tstate, {lastalert}).
 -record(mstate, {names, states}).
 
+% Startup and stuff
+start() ->
+	{ok, spawn(?MODULE, init, [])}.
+
+start_link() ->
+	{ok, spawn_link(?MODULE, init, [])}.
+
 % Init
-init(_Args) ->
-	error_logger:info_msg("Starting mailer.", []),
+init() ->
+	error_logger:info_msg("Starting env_alert.", []),
 	% Send the startup alert in three seconds...I'm not sure why just yet, but
 	% on some systems, bad things happen otherwise
 	case application:get_env(startup_alert_recipients) of
 		{ok, Recips} ->
-			timer:apply_after(3000, ?MODULE, startupAlert, [Recips]);
+			startupAlert(Recips);
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,
 	Names = environ_utilities:get_therm_map(),
-	{ok, #mstate{names=Names, states=dict:new()}}.
+	startHandler(self()),
+	loop(#mstate{names=Names, states=dict:new()}).
 
-% Find the range for the given device
-getRange(Name) ->
-	Ranges = environ_utilities:get_env_dict(ranges),
-	case dict:find(Name, Ranges) of
-		{ok, TheRange} -> TheRange;
-		_ ->
-			{ok, TheRange} = dict:find("--default--", Ranges),
-			TheRange
+startHandler(Owner) ->
+	% Add the handler
+	case temp_listener:add_sup_handler(env_alert_handler, [Owner]) of
+		ok ->
+			error_logger:error_msg("Started new env_alert_handler"),
+			ok;
+		Reason ->
+			error_logger:error_msg("Problem starting env_alert_handler:  ~p",
+				[Reason]),
+			exit(Reason)
 	end.
 
 % Send an individual message.
@@ -76,7 +84,7 @@ startupAlert(Recips) ->
 % Provide an updated reading for this device (possibly a new one)
 updateReading(Name, Val, State, Alert) ->
 	TStates = State#mstate.states,
-	TState = case dict:find(Name, TStates) of
+	case dict:find(Name, TStates) of
 			% Already seen, mark it
 			{ok, TS} ->
 				AlertTS = case Alert of
@@ -91,8 +99,7 @@ updateReading(Name, Val, State, Alert) ->
 							_ -> {0,0,0}
 						end,
 				#tstate{lastalert=AlertTS}
-		end,
-	TState#tstate{lastseen=now(), lastreading=Val}.
+		end.
 
 % A thermometer has been found to be out of range.  We will send out an alert
 % if we haven't sent one out too recently.  Let's find out...
@@ -103,7 +110,7 @@ outOfRange(Name, Val, Type, State) ->
 	MinAlertInterval = environ_utilities:get_env(min_alert_interval, 3600),
 	% Conditionally deliver the alert.  If it's been long enough, or we can't
 	% remember sending an alert, do it.
-	case dict:find(Name, State#mstate.states) of
+	NewTState = case dict:find(Name, State#mstate.states) of
 		{ok, TState} ->
 			% Check out long it's been since we've sent an alert
 			Tdiff = timer:now_diff(now(), TState#tstate.lastalert) / 1000000,
@@ -124,72 +131,30 @@ outOfRange(Name, Val, Type, State) ->
 			error_logger:error_msg(
 				"Can't remember sending an alert for ~p, sending", [Name]),
 			alert(Name, Val, Type, State)
+	end,
+	NewReadingState = dict:update(Name, fun(_) -> NewTState end, NewTState,
+		State#mstate.states),
+	State#mstate{states = NewReadingState}.
+
+loop(State) ->
+	receive
+		% Ping on a reading, just to make sure it's still alive
+		ping ->
+			loop(State);
+		% An alert
+		{alert, Name, Val, RangeRv} ->
+			error_logger:error_msg("Got alert:  ~p ~p ~p",
+				[Name, Val, RangeRv]),
+			NewState  = outOfRange(Name, Val, RangeRv, State),
+			loop(NewState);
+		% event handler shutdown notification
+		{gen_event_EXIT, env_alert_handler, shutdown} ->
+			error_logger:error_msg("env_alert_handler shutdown, stopping");
+		% all other events
+		Unknown ->
+			error_logger:error_msg("Got unknown message:  ~p", [Unknown])
+		after 60000 ->
+			Reason = "Too long without a message.",
+			error_logger:error_msg("env_alert: Exiting:  ~p", [Reason]),
+			exit(Reason)
 	end.
-
-% Check to see if this reading is out of range
-checkRange(Name, Key, Val, Range, State) ->
-	{Low, Hi} = Range,
-	if (Val > Hi) ->
-			outOfRange(Name, Val, {hi, Hi}, State);
-		true ->
-			if (Val < Low) ->
-					outOfRange(Name, Val, {low, Low}, State);
-				true ->
-					updateReading(Name, Val, State, false)
-			end
-	end.
-
-% Remove any TStates that may be too old, and alert on them
-cleanupTStates(TStates, State) ->
-	MaxAge = environ_utilities:get_env(max_ttl_age, 600),
-	dict:fold(fun(K, V, Acc) ->
-			% V is a tstate
-			% io:format("~p's record:  ~p~n", [K, V]),
-			TAge = timer:now_diff(now(), V#tstate.lastseen) / 1000000,
-			if (TAge > MaxAge) ->
-					error_logger:error_msg("~p is too old!  ~psecs",
-						[K, TAge]),
-					alert(K, V#tstate.lastreading, {too_old, MaxAge}, State),
-					dict:erase(K, Acc);
-				true ->
-					Acc
-			end
-		end, TStates, TStates).
-
-% Handle a reading
-handle_event({reading, Key, Val, Vals}, State) ->
-	% Find the name of the device this event is regarding
-	Name = case dict:find(Key, State#mstate.names) of
-			{ok, TheName} -> TheName;
-			_ -> Key
-		end,
-	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p",
-		% [Name, Val, Range]),
-	% Check the range and get the new reading
-	NewReading = checkRange(Name, Key, Val, getRange(Name), State),
-	% Add the new reading
-	NewReadingState = dict:update(Name, fun(_) -> NewReading end,
-						NewReading, State#mstate.states),
-	% Deal with anything that might need to be cleaned up
-	NewTStates = cleanupTStates(NewReadingState, State),
-	{ok, State#mstate{states = NewTStates}};
-
-handle_event(Ev, State) ->
-	error_logger:error_msg("Unhandled event:  ~p", [Ev]),
-	{ok, State}.
-
-handle_call(Info, State) ->
-	error_logger:error_msg("Handle call called:  ~p", [Info]),
-	{ok, Info, State}.
-
-handle_info(Info, State) ->
-	error_logger:error_msg("Handle info called:  ~p", [Info]),
-	{ok, State}.
-
-code_change(OldVsn, State, Extra) ->
-	error_logger:error_msg("Code change called:  ~p ~p", [OldVsn, Extra]),
-	{ok, State}.
-
-terminate(How, What) ->
-	error_logger:info_msg("mailer terminating:  ~p", [How]),
-	ok.

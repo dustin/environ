@@ -8,13 +8,13 @@
 	code_change/3, terminate/2]).
 -behavior(gen_event).
 
--record(estate, {alertpid, states}).
+-record(estate, {alertpid, states, seen}).
 -record(tstate, {lastseen, lastreading}).
 
 % Init
 init([Pid|Args]) ->
 	error_logger:info_msg("Starting env_alert_handler.", []),
-	{ok, #estate{alertpid=Pid, states=dict:new()}}.
+	{ok, #estate{alertpid=Pid, states=dict:new(), seen=sets:new()}}.
 
 % Find the range for the given device
 getRange(Name) ->
@@ -64,6 +64,25 @@ cleanupTStates(State) ->
 		end, TStates, TStates),
 	State#estate{states = NewTStates}.
 
+% check to see if this is a new reading from a device that has previously
+% talked to us, but fallen off the bus.  We send a notification when a device
+% falls off the bus, so this gives us the opportunity to send another
+% notification when a device goes back on the bus
+check_seen(Name, Reading, State) ->
+	case {dict:is_key(Name, State#estate.states),
+			sets:is_element(Name, State#estate.seen)} of
+		% Match if we DO NOT have the key in our state dict,
+		% but we DO have it in our seen set
+		{false, true} ->
+			% Send an alert when the device comes back.
+			State#estate.alertpid !
+				{alert, Name, Reading#tstate.lastreading,
+					{came_back, Reading#tstate.lastseen}},
+			% The return value will now include this device
+			sets:add_element(Name, State#estate.seen);
+		_ -> State#estate.seen
+	end.
+
 % Handle a reading
 handle_event({reading, Key, Name, Val, Vals}, State) ->
 	% Find the name of the device this event is regarding
@@ -78,9 +97,11 @@ handle_event({reading, Key, Name, Val, Vals}, State) ->
 	end,
 	% Update the reading
 	Reading = #tstate{lastseen=now(), lastreading=Val},
+	% See if this is a new reading from a device we've seen before
+	NewSeen = check_seen(Name, Reading, State),
 	NewDict = dict:update(Name, fun(_) -> Reading end, Reading,
 		State#estate.states),
-	NewState = cleanupTStates(State#estate{states = NewDict}),
+	NewState = cleanupTStates(State#estate{states = NewDict, seen=NewSeen}),
 	{ok, NewState};
 
 handle_event(Ev, State) ->

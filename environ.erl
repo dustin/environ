@@ -16,7 +16,7 @@ start() ->
 
 % application stuff
 start(_Type, _Args) ->
-	case get_env(logfile) of
+	case application:get_env(logfile) of
 		{ok, LF} ->
 			error_logger:logfile({open, LF});
 		_ ->

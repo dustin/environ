@@ -12,15 +12,13 @@ init([Socket|Args]) ->
 
 % Handle a reading
 handle_event({reading, Key, Val, Vals}, Socket) ->
-	% error_logger:info_msg("Got event:  ~p for ~p~n", [Vals, Socket]),
 	% Send the stuff from the event
-	lists:foreach(fun(I) -> ok = gen_tcp:send(Socket, I ++ [9]) end, Vals),
-	% Send a newline
-	ok = gen_tcp:send(Socket, [13, 10]),
+	ok = gen_tcp:send(Socket, [Key, 9, float_to_list(Val), 13, 10]),
 	{ok, Socket};
 handle_event(Ev, Socket) ->
 	error_logger:error_msg("Unhandled event:  ~p~n", [Ev]),
 	{ok, Socket}.
 
 terminate(How, What) ->
-	error_logger:error_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]).
+	error_logger:error_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]),
+	ok.

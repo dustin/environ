@@ -4,7 +4,7 @@
 
 -module(environ_mailer).
 -export([init/1, handle_event/2, handle_call/2, handle_info/2,
-	code_change/3, terminate/2, startupAlert/0]).
+	code_change/3, terminate/2, startupAlert/1]).
 -behavior(gen_event).
 
 -record(tstate, {lastseen, lastalert, lastreading}).
@@ -15,7 +15,12 @@ init(_Args) ->
 	error_logger:info_msg("Starting mailer.", []),
 	% Send the startup alert in three seconds...I'm not sure why just yet, but
 	% on some systems, bad things happen otherwise
-	timer:apply_after(3000, ?MODULE, startupAlert, []),
+	case application:get_env(startup_alert_recipients) of
+		{ok, Recips} ->
+			timer:apply_after(3000, ?MODULE, startupAlert, [Recips]);
+		_ ->
+			error_logger:error_msg("No startup_alert_recipients defined", [])
+	end,
 	Names = environ_utilities:get_therm_map(),
 	{ok, #mstate{names=Names, states=dict:new()}}.
 
@@ -56,22 +61,17 @@ alert(Name, Val, Type, State) ->
 	updateReading(Name, Val, State, true).
 
 % Alert sent upon startup to indicate the system is coming up
-startupAlert() ->
-	case application:get_env(startup_alert_recipients) of
-		{ok, Recips} ->
-			error_logger:info_msg("Sending startup alert to ~p", [Recips]),
-			MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-			{ok, MailServer} = smtp_fsm:start(MailServerHost),
-			{ok, Status} = smtp_fsm:ehlo(MailServer),
-			Msg = io_lib:format("environ started on ~p~n", [node()]),
-			lists:foreach(fun (To) ->
-					sendMessage(MailServer, To, "Environ startup", Msg)
-				end, Recips),
-			smtp_fsm:close(MailServer),
-			error_logger:info_msg("Sent startup alert");
-		_ ->
-			error_logger:error_msg("No startup_alert_recipients defined", [])
-	end.
+startupAlert(Recips) ->
+	error_logger:info_msg("Sending startup alert to ~p", [Recips]),
+		MailServerHost = environ_utilities:get_env(mail_server, "mail"),
+		{ok, MailServer} = smtp_fsm:start(MailServerHost),
+		{ok, Status} = smtp_fsm:ehlo(MailServer),
+		Msg = io_lib:format("environ started on ~p~n", [node()]),
+		lists:foreach(fun (To) ->
+				sendMessage(MailServer, To, "Environ startup", Msg)
+			end, Recips),
+		smtp_fsm:close(MailServer),
+		error_logger:info_msg("Sent startup alert").
 
 % Provide an updated reading for this device (possibly a new one)
 updateReading(Name, Val, State, Alert) ->

@@ -10,6 +10,7 @@
          {applications, [kernel,stdlib,smtp_client]},
 		 {mod, {environ, []}},
 		 {env, [
+				{logfile, "environ.log"},
 		 		{min_alert_interval, 3600},
 				{max_ttl_age, 900},
 		 		{therms, [

@@ -16,6 +16,12 @@ start() ->
 
 % application stuff
 start(_Type, _Args) ->
+	case get_env(logfile) of
+		{ok, LF} ->
+			error_logger:logfile({open, LF});
+		_ ->
+			error_logger:info_msg("Logging to tty")
+	end,
 	error_logger:info_msg("Starting environ", []),
 	environ_sup:start_link().
 

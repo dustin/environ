@@ -4,6 +4,8 @@ SHELL=/bin/sh
 
 DIRS=apps/temp_listener apps/lemp apps/env_alert
 
+EFLAGS=-pa apps/lemp -pa apps/temp_listener -pa apps/env_alert
+
 .PHONY: tgz
 
 all:
@@ -15,11 +17,10 @@ all:
 tgz: environ.tar.gz
 
 environ.boot: all environ.rel environ.app
-	erlc -W -v -I apps/temp_listener -I apps/lemp -I apps/env_alert \
-		environ.rel
+	erlc -W -v $(EFLAGS) environ.rel
 
-environ.tar.gz: all
-	erl -noshell -run systools make_tar environ -run init stop
+environ.tar.gz: environ.boot
+	erl $(EFLAGS) -noshell -run systools make_tar environ -run init stop
 
 clean:
 	rm -f environ.{beam,boot,script} environ.tar.gz

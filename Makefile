@@ -14,7 +14,7 @@ tgz: environ.tar.gz
 environ.boot: $(MODULES) environ.rel environ.app
 	erl -noinput -s buildscripts makeboot -s init stop
 
-environ.tar.gz: $(MODULES) environ.rel environ.app
+environ.tar.gz: all
 	erl -noinput -s buildscripts maketar -s init stop
 
 clean:

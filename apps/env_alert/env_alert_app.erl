@@ -6,27 +6,23 @@
 
 -behavior(application).
 
-% Supervisor functions.
+% App exports
 -export([start/0,
-	init/1,
 	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1]).
 
 % easy start
 start() ->
 	application:start(env_alert).
 
-% supervisor support
-init(_Args) ->
-	{ok, {{one_for_one, 2, 60},
-			[{env_alert, {env_alert, start_link, []},
-				permanent, 5000, worker, [env_alert]}
-			]}}.
-
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting env_alert", []),
-	supervisor:start_link(?MODULE, []).
-	% env_alert:start_link().
+	supervisor:start_link(gen_sup, [
+			{{one_for_one, 2, 60},
+					[{env_alert, {env_alert, start_link, []},
+						permanent, 5000, worker, [env_alert]}
+					]}
+		]).
 
 stop(_State) -> ok.
 

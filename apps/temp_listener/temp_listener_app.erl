@@ -8,25 +8,20 @@
 
 % Supervisor functions.
 -export([start/0,
-	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1,
-	init/1]).
+	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1]).
 
 % easy start
 start() ->
 	application:start(temp_listener).
 
-% supervisor support
-init(_Args) ->
-	{ok, {{one_for_one, 2, 60},
-			[{temp_listener, {temp_listener, start_link, []},
-				permanent, 5000, worker, [temp_listener]}
-			]}}.
-
 % application stuff
 start(Type, Args) ->
 	error_logger:info_msg("Starting temp_listener (~p, ~p)", [Type, Args]),
-	supervisor:start_link(?MODULE, []).
-	% temp_listener:start_link().
+	supervisor:start_link(gen_sup, [
+			{{one_for_one, 2, 60},
+				[{temp_listener, {temp_listener, start_link, []},
+					permanent, 5000, worker, [temp_listener]}
+				]}]).
 
 stop(State) ->
 	error_logger:error_msg("Stopped temp_listener:  ~p", [State]),

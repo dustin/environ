@@ -3,7 +3,8 @@
 {application, env_alert,
         [{description, "Environmental alerts."},
          {vsn, "1.0"},
-         {modules, [ env_alert_app, env_alert, env_alert_handler ]},
+         {modules, [ env_alert_app, env_alert, env_alert_handler, gen_sup,
+		 	environ_utilities]},
 
          {registered, []},
          {applications, [kernel,stdlib,temp_listener,smtp_client]},

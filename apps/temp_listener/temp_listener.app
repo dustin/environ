@@ -3,7 +3,7 @@
 {application, temp_listener,
 	[{description, "Listen to temperature announcements, send local events"},
 	 {vsn, "1.0"},
-	 {modules, [temp_listener]},
+	 {modules, [temp_listener_app, temp_listener, gen_sup, environ_utilities]},
 	 {registered, [temp_listener_app,temp_listener,temp_listener_events]},
 	 {applications, [kernel,stdlib]},
 	 {mod, {temp_listener_app, []}},

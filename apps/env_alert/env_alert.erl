@@ -21,8 +21,8 @@ init() ->
 	% Send the startup alert in three seconds...I'm not sure why just yet, but
 	% on some systems, bad things happen otherwise
 	case application:get_env(startup_alert_recipients) of
-		{ok, Recips} ->
-			startupAlert(Recips);
+		{ok, [First|Rest]} ->
+			startupAlert([First|Rest]);
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,

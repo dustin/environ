@@ -63,10 +63,12 @@ lemp(Socket, Map, Id) ->
 			lemp_send(Socket, 221, [K, [9], V]),
 			Acc
 		end, ok, Map),
+	lemp_send(Socket, 222, "End of mappings"),
 	dict:fold(fun(K, V, Acc) ->
-			lemp_send(Socket, 222, [K, [9], float_to_list(V)]),
+			lemp_send(Socket, 223, [K, [9], float_to_list(V)]),
 			Acc
 		end, ok, temp_listener:getdict()),
+	lemp_send(Socket, 224, "End of old data"),
 	ok = temp_listener:add_handler({lemp_handler, Id}, [self(), Id]),
 	lemp_loop(Socket, Id).
 

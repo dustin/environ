@@ -20,6 +20,16 @@ init([Pid|Args]) ->
 getRecipients() ->
 	environ_utilities:get_env(env_alert, notifications, []).
 
+% Find the maximum TTL age for the named device
+getMaxTTL(Name) ->
+	Ttls = environ_utilities:get_env_dict(env_alert, max_ttl_ages),
+	case dict:find(Name, Ttls) of
+		{ok, Rv} -> Rv;
+		_ ->
+			{ok, Rv} = dict:find("--default--", Ttls),
+			Rv
+	end.
+
 % Find the range for the given device
 getRange(Name) ->
 	Ranges = environ_utilities:get_env_dict(env_alert, ranges),
@@ -50,12 +60,14 @@ checkRange(Val, Range) ->
 
 % Remove any TStates that may be too old, and alert on them
 cleanupTStates(State) ->
-	MaxAge = environ_utilities:get_env(env_alert, max_ttl_age, 600),
 	TStates = State#estate.states,
 	NewTStates = dict:fold(fun(K, V, Acc) ->
 			% V is a tstate
 			% io:format("~p's record:  ~p~n", [K, V]),
 			TAge = timer:now_diff(now(), V#tstate.lastseen) / 1000000,
+			MaxAge = getMaxTTL(K),
+			error_logger:info_msg("Age of ~s is ~p, max ttl is ~p",
+				[K, TAge, MaxAge]),
 			if (TAge > MaxAge) ->
 					error_logger:error_msg("~p is too old!  ~psecs",
 						[K, TAge]),

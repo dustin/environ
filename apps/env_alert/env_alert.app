@@ -12,7 +12,7 @@
 		 		{min_alert_interval, 3600},
 				{max_ttl_age, 300},
 					{ranges, [
-						{"newmachineroom", {13, 28}},
+						{"machineroom", {13, 28}},
 						{"bedroom", {10, 31}},
 						{"livingroom", {13, 30}},
 						{"guestroom", {8, 30}},

@@ -17,8 +17,8 @@
 				]},
 				{ranges, [
 					{"machineroom", {13, 27}},
-					{"bedroom", {10, 31}},
-					{"livingroom", {13, 30}},
+					{"bedroom", {8, 31}},
+					{"livingroom", {8, 30}},
 					{"guestroom", {8, 30}},
 					{"purple_mb", {1, 80}},
 					{"purple_cpu", {1, 80}},

@@ -4,7 +4,7 @@
 
 -module(environ_mailer).
 -export([init/1, handle_event/2, handle_call/2, handle_info/2,
-	code_change/3, terminate/2]).
+	code_change/3, terminate/2, startupAlert/0]).
 -behavior(gen_event).
 
 -record(tstate, {lastseen, lastalert, lastreading}).
@@ -13,7 +13,9 @@
 % Init
 init(_Args) ->
 	error_logger:info_msg("Starting mailer.", []),
-	startupAlert(),
+	% Send the startup alert in three seconds...I'm not sure why just yet, but
+	% on some systems, bad things happen otherwise
+	timer:apply_after(3000, ?MODULE, startupAlert, []),
 	Names = environ_utilities:get_therm_map(),
 	{ok, #mstate{names=Names, states=dict:new()}}.
 
@@ -57,10 +59,10 @@ alert(Name, Val, Type, State) ->
 startupAlert() ->
 	case application:get_env(startup_alert_recipients) of
 		{ok, Recips} ->
-			error_logger:info_msg("Sending startup alert"),
+			error_logger:info_msg("Sending startup alert to ~p", [Recips]),
 			MailServerHost = environ_utilities:get_env(mail_server, "mail"),
 			{ok, MailServer} = smtp_fsm:start(MailServerHost),
-			{ok, _Status} = smtp_fsm:ehlo(MailServer),
+			{ok, Status} = smtp_fsm:ehlo(MailServer),
 			Msg = io_lib:format("environ started on ~p~n", [node()]),
 			lists:foreach(fun (To) ->
 					sendMessage(MailServer, To, "Environ startup", Msg)

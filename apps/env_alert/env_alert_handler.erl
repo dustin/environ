@@ -101,7 +101,7 @@ check_seen(Name, Reading, State) ->
 			State#estate.alertpid !
 				{uncond_alert, getRecipients(),
 					io_lib:format("Temperature alert: ~s came back", [Name]),
-					io_lib:format("~s came back, reading is~.2f",
+					io_lib:format("~s came back, reading is ~.2f",
 						[Name, Reading#tstate.lastreading])},
 			State#estate.seen;
 		{_, false} ->

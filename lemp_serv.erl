@@ -11,7 +11,7 @@ start() ->
 	start(8181).
 
 start(PortNum) when integer(PortNum) ->
-	spawn_link(?MODULE, init, [PortNum]).
+	{ok, spawn_link(?MODULE, init, [PortNum])}.
 
 %
 % The server itself
@@ -49,7 +49,7 @@ lemp(Socket, Id) ->
 				++ float_to_list(V) ++ [13,10]),
 			Acc
 		end, ok, temp_listener:getdict()),
-	ok = temp_listener:add_handler({lemp_handler, Id}, [Socket, Id]),
+	ok = temp_listener:add_handler({lemp_handler, Id}, [self(), Id]),
 	lemp_loop(Socket, Id).
 
 lemp_exit(Reason, Id) ->
@@ -59,6 +59,9 @@ lemp_exit(Reason, Id) ->
 
 lemp_loop(Socket, Id) ->
 	receive
+		{reading, Key, Val, Vals} ->
+			ok = gen_tcp:send(Socket, [Key, 9, float_to_list(Val), 13, 10]),
+			lemp_loop(Socket, Id);
 		{tcp, Socket, Bytes} ->
 			error_logger:error_msg("lemp: Received unwanted data:  ~p~n",
 				[Bytes]),

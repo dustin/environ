@@ -6,18 +6,18 @@
 -export([init/1, handle_event/2, terminate/2]).
 
 % Init
-init([Socket|Args]) ->
-	error_logger:info_msg("Starting event handler with:  ~p~n", [Socket]),
-	{ok, Socket}.
+init([Pid|Args]) ->
+	error_logger:info_msg("Starting event handler with:  ~p~n", [Pid]),
+	{ok, Pid}.
 
 % Handle a reading
-handle_event({reading, Key, Val, Vals}, Socket) ->
+handle_event({reading, Key, Val, Vals}, Pid) ->
 	% Send the stuff from the event
-	ok = gen_tcp:send(Socket, [Key, 9, float_to_list(Val), 13, 10]),
-	{ok, Socket};
-handle_event(Ev, Socket) ->
+	Pid ! {reading, Key, Val, Vals},
+	{ok, Pid};
+handle_event(Ev, Pid) ->
 	error_logger:error_msg("Unhandled event:  ~p~n", [Ev]),
-	{ok, Socket}.
+	{ok, Pid}.
 
 terminate(How, What) ->
 	error_logger:error_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]),

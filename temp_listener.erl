@@ -9,10 +9,10 @@
 
 % Spawn the process.
 start() ->
-	spawn(?MODULE, init, []).
+	{ok, spawn(?MODULE, init, [])}.
 
 start_link() ->
-	spawn_link(?MODULE, init, []).
+	{ok, spawn_link(?MODULE, init, [])}.
 
 % Initialize the multicast group and start the loop
 init() ->

@@ -4,7 +4,7 @@
 
 -module(lemp_serv).
 
--export([start/0, start/1, init/1, lemp/2]).
+-export([start/0, start/1, init/1, lemp/3]).
 
 % Starting the server
 start() ->
@@ -21,15 +21,29 @@ start(PortNum) when integer(PortNum) ->
 init(PortNum) ->
 	{ok, LS} = gen_tcp:listen(PortNum, [{reuseaddr, true}, {packet, 0},
 									{active, false}]),
-	accept_loop(LS, 1).
+	Therms = [
+		{"1081841E000000DF", "bedroom"},
+		{"10258D2A000000EA", "backyard"},
+		{"10C8892A00000096", "livingroom"},
+		{"101D8A2A000000F7", "newmachineroom"},
+		{"10E8C214000000E4", "garage"},
+		{"1013A51E00000035", "guestroom"}
+		% {"2183110000C034BB", "dustinkeychain"},
+		% {"21508400004025AF", "kitchen"},
+		],
+	Map = lists:foldl(fun ({K, V}, Acc) ->
+			dict:update(K, fun(_) -> V end, V, Acc)
+		end,
+		dict:new(), Therms),
+	accept_loop(LS, Map, 1).
 
 % Accept incoming connections
-accept_loop(LS, Count) ->
+accept_loop(LS, Map, Count) ->
 	{ok, NS} = gen_tcp:accept(LS),
-	Pid = spawn(?MODULE, lemp, [NS, Count]),
+	Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
 	gen_tcp:controlling_process(NS, Pid),
 	Pid ! go_ahead,
-	accept_loop(LS, Count + 1).
+	accept_loop(LS, Map, Count + 1).
 
 
 %
@@ -37,17 +51,20 @@ accept_loop(LS, Count) ->
 %
 
 % Set up and loop
-lemp(Socket, Id) ->
+lemp(Socket, Map, Id) ->
 	process_flag(trap_exit, true),
 	% Wait for sync
 	receive
 		go_ahead ->
 			inet:setopts(Socket, [{active, true}])
 	end,
-	gen_tcp:send(Socket, "# LEMP 1.0\r\n"),
+	lemp_send(Socket, 220, "LEMP 1.0"),
 	dict:fold(fun(K, V, Acc) ->
-			gen_tcp:send(Socket, "# " ++ K ++ [9]
-				++ float_to_list(V) ++ [13,10]),
+			lemp_send(Socket, 221, [K, [9], V]),
+			Acc
+		end, ok, Map),
+	dict:fold(fun(K, V, Acc) ->
+			lemp_send(Socket, 222, [K, [9], float_to_list(V)]),
 			Acc
 		end, ok, temp_listener:getdict()),
 	ok = temp_listener:add_handler({lemp_handler, Id}, [self(), Id]),
@@ -59,12 +76,18 @@ lemp_exit(Reason, Id) ->
 	ok = temp_listener:delete_handler({lemp_handler, Id}, []),
 	exit(closed).
 
+% Send a message with its status and all
+lemp_send(Socket, Status, Message) when list(Status) ->
+	gen_tcp:send(Socket, [Status, " ", Message, <<13,10>>]);
+lemp_send(Socket, Status, Message) when integer(Status) ->
+	lemp_send(Socket, integer_to_list(Status), Message).
+
 % Message dispatch for the server processes
 lemp_loop(Socket, Id) ->
 	receive
 		% Outbound messages
 		{reading, Key, Val, Vals} ->
-			ok = gen_tcp:send(Socket, [Key, 9, float_to_list(Val), 13, 10]),
+			ok = lemp_send(Socket, 200, [Key, [9], float_to_list(Val)]),
 			lemp_loop(Socket, Id);
 		% Inbound messages
 		{tcp, Socket, Bytes} ->

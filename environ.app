@@ -3,7 +3,8 @@
 {application, environ,
         [{description, "Environmental monitoring."},
          {vsn, "1.0"},
-         {modules, [ environ ]},
+         {modules, [ environ, environ_sup, lemp_handler,
+		 	lemp_serv, temp_listener ]},
 
          {registered, [temp_listener, temp_listener_events]},
          {applications, [kernel,stdlib]},

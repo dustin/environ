@@ -21,8 +21,7 @@ start(PortNum) when integer(PortNum) ->
 init(PortNum) ->
 	{ok, LS} = gen_tcp:listen(PortNum, [{reuseaddr, true}, {packet, 0},
 									{active, false}]),
-	EnvTherms = application:get_env(therms),
-	Therms = case EnvTherms of
+	Therms = case application:get_env(therms) of
 			{ok, T} -> T;
 			_ -> []
 		end,

@@ -1,0 +1,13 @@
+% arch-tag: 345BEBDA-9E4E-11D8-B082-000A957659CC
+%
+% To make a boot from this:
+% systools:make_script("environ", [local]).
+%
+% To make a tar file for disting:
+% systools:make_tar("environ").
+
+{release,
+	{"environ_rel", "1.0"},
+	{erts, "5.2.3.6"},
+	[{kernel, "2.9"}, {stdlib, "1.12"}, {environ, "1.0"}]
+}.

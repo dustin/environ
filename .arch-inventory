@@ -1,0 +1,3 @@
+% arch-tag: D8940739-9E4F-11D8-B0DE-000A957659CC
+
+precious ^(environ.boot|environ.script|environ.tar.gz)$

@@ -36,6 +36,9 @@ accept_loop(LS, Map, Count) ->
 % The individual connections
 %
 
+lemp_temp_data(Key, Val) ->
+	io_lib:format("~s\t~f", [Key, Val]).
+
 % Set up and loop
 lemp(Socket, Map, Id) ->
 	process_flag(trap_exit, true),
@@ -51,7 +54,7 @@ lemp(Socket, Map, Id) ->
 		end, ok, Map),
 	lemp_send(Socket, 222, "End of mappings"),
 	dict:fold(fun(K, V, Acc) ->
-			lemp_send(Socket, 223, [K, [9], float_to_list(V)]),
+			lemp_send(Socket, 223, lemp_temp_data(K, V)),
 			Acc
 		end, ok, temp_listener:getdict()),
 	lemp_send(Socket, 224, "End of old data"),
@@ -75,7 +78,7 @@ lemp_loop(Socket, Id) ->
 	receive
 		% Outbound messages
 		{reading, Key, Val, Vals} ->
-			ok = lemp_send(Socket, 200, [Key, [9], float_to_list(Val)]),
+			ok = lemp_send(Socket, 200, lemp_temp_data(Key, Val)),
 			lemp_loop(Socket, Id);
 		% Inbound messages
 		{tcp, Socket, Bytes} ->

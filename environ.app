@@ -4,7 +4,7 @@
         [{description, "Environmental monitoring."},
          {vsn, "1.0"},
          {modules, [ environ, environ_sup, lemp_handler,
-		 	lemp_serv, temp_listener ]},
+		 	lemp_serv, temp_listener, environ_utilities ]},
 
          {registered, [temp_listener, temp_listener_events]},
          {applications, [kernel,stdlib,smtp_client]},

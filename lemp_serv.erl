@@ -21,15 +21,7 @@ start(PortNum) when integer(PortNum) ->
 init(PortNum) ->
 	{ok, LS} = gen_tcp:listen(PortNum, [{reuseaddr, true}, {packet, 0},
 									{active, false}]),
-	Therms = case application:get_env(therms) of
-			{ok, T} -> T;
-			_ -> []
-		end,
-	Map = lists:foldl(fun ({K, V}, Acc) ->
-			dict:update(K, fun(_) -> V end, V, Acc)
-		end,
-		dict:new(), Therms),
-	accept_loop(LS, Map, 1).
+	accept_loop(LS, environ_utilities:get_therm_map(), 1).
 
 % Accept incoming connections
 accept_loop(LS, Map, Count) ->

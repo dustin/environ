@@ -1,7 +1,8 @@
 # arch-tag: AA622612-9F1C-11D8-8851-000A957659CC
 
 MODULES=environ.beam environ_sup.beam lemp_handler.beam lemp_serv.beam \
-	mailer.beam temp_listener.beam buildscripts.beam
+	mailer.beam temp_listener.beam environ_utilities.beam \
+	buildscripts.beam
 
 .SUFFIXES: .erl .beam .app .rel .script
 

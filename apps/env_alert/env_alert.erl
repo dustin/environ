@@ -51,37 +51,35 @@ sendMessage(MailServer, To, Subject, Body) ->
 	{ok, _Status} = smtp_fsm:rset(MailServer),
 	ok = smtp_fsm:sendemail(MailServer, From, To, Msg).
 
+% Generic alert send function
+genAlert(Recips, Subject, Msg) ->
+	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
+	error_logger:info_msg("Sending generic alert to ~p via ~p",
+		[Recips, MailServerHost]),
+	{ok, MailServer} = smtp_fsm:start(MailServerHost),
+	{ok, Status} = smtp_fsm:ehlo(MailServer),
+	lists:foreach(fun (To) ->
+			sendMessage(MailServer, To, Subject, Msg)
+		end, Recips),
+	smtp_fsm:close(MailServer),
+	error_logger:info_msg("Sent generic alert").
+
 % Send an alert
 alert(Name, Val, Type, State) ->
 	error_logger:error_msg("Sending an alert for ~p (~p when  ~p)",
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
 	Body = io_lib:format("~s:~.2f (~p)~n", [Name, Val, Type]),
-	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-	{ok, MailServer} = smtp_fsm:start(MailServerHost),
-	{ok, _Status} = smtp_fsm:ehlo(MailServer),
 	% Send email to everyone who should receive one
-	Alerts = environ_utilities:get_env(notifications, []),
-	lists:foreach(fun (To) ->
-			sendMessage(MailServer, To, Subject, Body)
-		end, Alerts),
-	smtp_fsm:close(MailServer),
+	Recips = environ_utilities:get_env(notifications, []),
+	genAlert(Recips, Subject, Body),
 	% Now return the new reading val (an alert)
 	updateReading(Name, Val, State, true).
 
 % Alert sent upon startup to indicate the system is coming up
 startupAlert(Recips) ->
-	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-	error_logger:info_msg("Sending startup alert to ~p via ~p",
-		[Recips, MailServerHost]),
-	{ok, MailServer} = smtp_fsm:start(MailServerHost),
-	{ok, Status} = smtp_fsm:ehlo(MailServer),
-	Msg = io_lib:format("environ started on ~p~n", [node()]),
-	lists:foreach(fun (To) ->
-			sendMessage(MailServer, To, "Environ startup", Msg)
-		end, Recips),
-	smtp_fsm:close(MailServer),
-	error_logger:info_msg("Sent startup alert").
+	genAlert(Recips, "Environ startup",
+		io_lib:format("environ started on ~p~n", [node()])).
 
 % Provide an updated reading for this device (possibly a new one)
 updateReading(Name, Val, State, Alert) ->
@@ -149,6 +147,12 @@ loop(State) ->
 				[Name, Val, RangeRv]),
 			NewState  = outOfRange(Name, Val, RangeRv, State),
 			loop(NewState);
+		% An unconditional alert (no time check)
+		{uncond_alert, Recips, Subject, Message} ->
+			error_logger:error_msg("Got uncondtional alert:  ~p ~p ~p",
+				[Recips, Subject, Message]),
+			genAlert(Recips, Subject, Message),
+			loop(State);
 		% event handler shutdown notification
 		{gen_event_EXIT, env_alert_handler, shutdown} ->
 			error_logger:error_msg("env_alert_handler shutdown, stopping");

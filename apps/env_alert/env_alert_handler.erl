@@ -16,6 +16,10 @@ init([Pid|Args]) ->
 	error_logger:info_msg("Starting env_alert_handler.", []),
 	{ok, #estate{alertpid=Pid, states=dict:new(), seen=sets:new()}}.
 
+% Get all of the alert recipients
+getRecipients() ->
+	environ_utilities:get_env(env_alert, notifications, []).
+
 % Find the range for the given device
 getRange(Name) ->
 	Ranges = environ_utilities:get_env_dict(env_alert, ranges),
@@ -56,7 +60,12 @@ cleanupTStates(State) ->
 					error_logger:error_msg("~p is too old!  ~psecs",
 						[K, TAge]),
 					State#estate.alertpid !
-						{alert, K, V#tstate.lastreading, {too_old, MaxAge}},
+						{uncond_alert, getRecipients(),
+							io_lib:format("Temperature alert: ~s is too old",
+								[K]),
+							io_lib:format(
+								"~s is too old, last saw ~.2f (~p > ~p)",
+								[K, V#tstate.lastreading, TAge, MaxAge])},
 					dict:erase(K, Acc);
 				true ->
 					Acc
@@ -69,6 +78,7 @@ cleanupTStates(State) ->
 % falls off the bus, so this gives us the opportunity to send another
 % notification when a device goes back on the bus
 check_seen(Name, Reading, State) ->
+	% error_logger:info_msg("check_seen(~p, ~p, <State>)", [Name, Reading]),
 	case {dict:is_key(Name, State#estate.states),
 			sets:is_element(Name, State#estate.seen)} of
 		% Match if we DO NOT have the key in our state dict,
@@ -78,13 +88,18 @@ check_seen(Name, Reading, State) ->
 				[Name, Reading#tstate.lastreading]),
 			% Send an alert regarding this returned device
 			State#estate.alertpid !
-				{alert, Name, Reading#tstate.lastreading, came_back};
+				{uncond_alert, getRecipients(),
+					io_lib:format("Temperature alert: ~s came back", [Name]),
+					io_lib:format("~s came back, reading is~.2f",
+						[Name, Reading#tstate.lastreading])},
+			State#estate.seen;
 		{_, false} ->
 			error_logger:info_msg("New device:  ~p @ ~p",
 				[Name, Reading#tstate.lastreading]),
 			% The return value will now include this device
 			sets:add_element(Name, State#estate.seen);
-		_ -> State#estate.seen
+		_ ->
+			State#estate.seen
 	end.
 
 % Handle a reading

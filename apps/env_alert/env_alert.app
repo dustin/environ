@@ -16,6 +16,9 @@
 						{"bedroom", {10, 31}},
 						{"livingroom", {13, 30}},
 						{"guestroom", {8, 30}},
+						{"purple_mb", {25, 45}},
+						{"purple_cpu", {25, 45}},
+						{"purple_chip", {25, 60}},
 						{"--default--", {-50,50}}
 					]},
 					{notifications, [

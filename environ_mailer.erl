@@ -12,7 +12,7 @@
 
 % Init
 init(_Args) ->
-	error_logger:info_msg("Starting mailer.~n", []),
+	error_logger:info_msg("Starting mailer.", []),
 	Names = environ_utilities:get_therm_map(),
 	{ok, #mstate{names=Names, states=dict:new()}}.
 
@@ -28,14 +28,14 @@ getRange(Name) ->
 
 % Send an individual message.
 sendMessage(MailServer, From, To, Subject, Body) ->
-	error_logger:info_msg("Sending to ~p~n", [To]),
+	error_logger:info_msg("Sending to ~p", [To]),
 	Msg = email_msg:simp_msg(From, To, Subject, Body),
 	{ok, _Status} = smtp_fsm:rset(MailServer),
 	ok = smtp_fsm:sendemail(MailServer, From, To, Msg).
 
 % Send an alert
 alert(Name, Val, Type, State) ->
-	error_logger:error_msg("Sending an alert for ~p (~p when  ~p)~n",
+	error_logger:error_msg("Sending an alert for ~p (~p when  ~p)",
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
 	Body = io_lib:format("~s:~.2f (~p)~n", [Name, Val, Type]),
@@ -73,7 +73,7 @@ updateReading(Name, Val, State, Alert) ->
 % A thermometer has been found to be out of range.  We will send out an alert
 % if we haven't sent one out too recently.  Let's find out...
 outOfRange(Name, Val, Type, State) ->
-	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p\n",
+	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p",
 		[Name, Val, Type]),
 	% Find the minimum amount of time that must pass between alerts
 	MinAlertInterval = environ_utilities:get_env(min_alert_interval, 3600),
@@ -85,12 +85,12 @@ outOfRange(Name, Val, Type, State) ->
 			Tdiff = timer:now_diff(now(), TState#tstate.lastalert) / 1000000,
 			if (Tdiff >= MinAlertInterval) ->
 					error_logger:error_msg(
-						"Last alert for ~p sent ~ps ago, sending~n",
+						"Last alert for ~p sent ~ps ago, sending",
 						[Name, Tdiff]),
 					alert(Name, Val, Type, State);
 				true ->
 					error_logger:error_msg(
-						"Last alert for ~p sent ~ps ago, holding~n",
+						"Last alert for ~p sent ~ps ago, holding",
 						[Name, Tdiff]),
 					% Say false here so it won't count this as an alert
 					updateReading(Name, Val, State, false)
@@ -98,7 +98,7 @@ outOfRange(Name, Val, Type, State) ->
 		_ ->
 			% Go ahead and send the alert.
 			error_logger:error_msg(
-				"Can't remember sending an alert for ~p, sending~n", [Name]),
+				"Can't remember sending an alert for ~p, sending", [Name]),
 			alert(Name, Val, Type, State)
 	end.
 
@@ -123,7 +123,7 @@ cleanupTStates(TStates, State) ->
 			% io:format("~p's record:  ~p~n", [K, V]),
 			TAge = timer:now_diff(now(), V#tstate.lastseen) / 1000000,
 			if (TAge > MaxAge) ->
-					error_logger:error_msg("~p is too old!  ~psecs~n",
+					error_logger:error_msg("~p is too old!  ~psecs",
 						[K, TAge]),
 					alert(K, V#tstate.lastreading, {too_old, MaxAge}, State),
 					dict:erase(K, Acc);
@@ -139,7 +139,7 @@ handle_event({reading, Key, Val, Vals}, State) ->
 			{ok, TheName} -> TheName;
 			_ -> Key
 		end,
-	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p~n",
+	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p",
 		% [Name, Val, Range]),
 	% Check the range and get the new reading
 	NewReading = checkRange(Name, Key, Val, getRange(Name), State),
@@ -151,21 +151,21 @@ handle_event({reading, Key, Val, Vals}, State) ->
 	{ok, State#mstate{states = NewTStates}};
 
 handle_event(Ev, State) ->
-	error_logger:error_msg("Unhandled event:  ~p~n", [Ev]),
+	error_logger:error_msg("Unhandled event:  ~p", [Ev]),
 	{ok, State}.
 
 handle_call(Info, State) ->
-	error_logger:error_msg("Handle call called:  ~p~n", [Info]),
+	error_logger:error_msg("Handle call called:  ~p", [Info]),
 	{ok, Info, State}.
 
 handle_info(Info, State) ->
-	error_logger:error_msg("Handle info called:  ~p~n", [Info]),
+	error_logger:error_msg("Handle info called:  ~p", [Info]),
 	{ok, State}.
 
 code_change(OldVsn, State, Extra) ->
-	error_logger:error_msg("Code change called:  ~p ~p~n", [OldVsn, Extra]),
+	error_logger:error_msg("Code change called:  ~p ~p", [OldVsn, Extra]),
 	{ok, State}.
 
 terminate(How, What) ->
-	error_logger:info_msg("mailer terminating:  ~p~n", [How]),
+	error_logger:info_msg("mailer terminating:  ~p", [How]),
 	ok.

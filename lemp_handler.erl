@@ -7,7 +7,7 @@
 
 % Init
 init([Pid|Args]) ->
-	error_logger:info_msg("Starting event handler with:  ~p~n", [Pid]),
+	error_logger:info_msg("Starting event handler with:  ~p", [Pid]),
 	{ok, Pid}.
 
 % Handle a reading
@@ -16,9 +16,9 @@ handle_event({reading, Key, Val, Vals}, Pid) ->
 	Pid ! {reading, Key, Val, Vals},
 	{ok, Pid};
 handle_event(Ev, Pid) ->
-	error_logger:error_msg("Unhandled event:  ~p~n", [Ev]),
+	error_logger:error_msg("Unhandled event:  ~p", [Ev]),
 	{ok, Pid}.
 
 terminate(How, What) ->
-	error_logger:info_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]),
+	error_logger:info_msg("lemp_handler terminating:  ~p: ~p", [How, What]),
 	ok.

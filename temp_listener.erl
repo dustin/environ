@@ -50,16 +50,16 @@ loop(Port, Dict) ->
 			From ! Dict,
 			loop(Port, Dict);
 		{gen_event_EXIT, environ_mailer, Why} ->
-			error_logger:error_msg("environ_mailer died, restarting:  ~p\n",
+			error_logger:error_msg("environ_mailer died, restarting:  ~p",
 				[Why]);
 		% Anything else
 		Unhandled ->
-			error_logger:error_msg("temp_listener: Unhandled message:  ~p\n",
+			error_logger:error_msg("temp_listener: Unhandled message:  ~p",
 				[Unhandled]),
 			loop(Port, Dict)
 		after 180000 ->
 			Reason = "Been too long since I've heard from a thermometer.",
-			error_logger:error_msg("temp_listener: Exiting:  ~p\n", [Reason]),
+			error_logger:error_msg("temp_listener: Exiting:  ~p", [Reason]),
 			exit(Reason)
 	end.
 
@@ -79,15 +79,15 @@ getval(SN) ->
 
 % Add an event handler for temperature events
 add_handler(Mod, Args) ->
-	error_logger:info_msg("Registering handler:  (~p, ~p)~n", [Mod, Args]),
+	error_logger:info_msg("Registering handler:  (~p, ~p)", [Mod, Args]),
 	gen_event:add_handler(temp_listener_events, Mod, Args).
 
 add_sup_handler(Mod, Args) ->
-	error_logger:info_msg("Registering supervised handler:  (~p, ~p)~n",
+	error_logger:info_msg("Registering supervised handler:  (~p, ~p)",
 		[Mod, Args]),
 	gen_event:add_sup_handler(temp_listener_events, Mod, Args).
 
 % Unregister a handler
 delete_handler(Mod, Args) ->
-	error_logger:info_msg("Unregistering handler:  (~p, ~p)~n", [Mod, Args]),
+	error_logger:info_msg("Unregistering handler:  (~p, ~p)", [Mod, Args]),
 	gen_event:delete_handler(temp_listener_events, Mod, Args).

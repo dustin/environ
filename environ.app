@@ -9,16 +9,23 @@
          {registered, [temp_listener, temp_listener_events]},
          {applications, [kernel,stdlib,smtp_client]},
 		 {mod, {environ, []}},
-		 {env, [{therms,
-			[
-				{"1081841E000000DF", "bedroom"},
-				{"10258D2A000000EA", "backyard"},
-				{"10C8892A00000096", "livingroom"},
-				{"101D8A2A000000F7", "newmachineroom"},
-				{"10E8C214000000E4", "garage"},
-				{"1013A51E00000035", "guestroom"}
-				% {"2183110000C034BB", "dustinkeychain"},
-				% {"21508400004025AF", "kitchen"},
-			]}]}
+		 {env, [{therms, [
+						{"1081841E000000DF", "bedroom"},
+						{"10258D2A000000EA", "backyard"},
+						{"10C8892A00000096", "livingroom"},
+						{"101D8A2A000000F7", "newmachineroom"},
+						{"10E8C214000000E4", "garage"},
+						{"1013A51E00000035", "guestroom"}
+						% {"2183110000C034BB", "dustinkeychain"},
+						% {"21508400004025AF", "kitchen"},
+					]},
+					{ranges, [
+						{"newmachineroom", {15, 20}},
+						{"--default--", {-50,50}}
+					]},
+					{notifications, [
+						"dustin@spy.net"
+					]}
+				]}
 ]}.
 

@@ -4,7 +4,7 @@
 
 -module(temp_listener).
 -export([start/0, start_link/0, getdict/0, getval/1,
-	add_handler/2, delete_handler/2]).
+	add_handler/2, add_sup_handler/2, delete_handler/2]).
 -export([init/0]).
 
 % Spawn the process.
@@ -21,7 +21,7 @@ init() ->
 	% register my event handler
 	gen_event:start_link({local, temp_listener_events}),
 	% Register the handler for the mailer (until I find a better place for this)
-	add_handler(environ_mailer, []),
+	add_sup_handler(environ_mailer, []),
 	process_flag(trap_exit, true),
 	{ok, GAddr}=inet:getaddr("225.0.0.37", inet),
 	{ok, LAddr}=inet:getaddr("0.0.0.0", inet),
@@ -49,6 +49,9 @@ loop(Port, Dict) ->
 		{getdict, From} ->
 			From ! Dict,
 			loop(Port, Dict);
+		{gen_event_EXIT, environ_mailer, Why} ->
+			error_logger:error_msg("environ_mailer died, restarting:  ~p\n",
+				[Why]);
 		% Anything else
 		Unhandled ->
 			error_logger:error_msg("temp_listener: Unhandled message:  ~p\n",
@@ -78,6 +81,11 @@ getval(SN) ->
 add_handler(Mod, Args) ->
 	error_logger:info_msg("Registering handler:  (~p, ~p)~n", [Mod, Args]),
 	gen_event:add_handler(temp_listener_events, Mod, Args).
+
+add_sup_handler(Mod, Args) ->
+	error_logger:info_msg("Registering supervised handler:  (~p, ~p)~n",
+		[Mod, Args]),
+	gen_event:add_sup_handler(temp_listener_events, Mod, Args).
 
 % Unregister a handler
 delete_handler(Mod, Args) ->

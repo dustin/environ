@@ -3,16 +3,23 @@
 %%
 
 -module(environ_utilities).
--export([get_therm_map/0]).
+-export([get_therm_map/0, get_env_dict/1, get_env/2]).
 
-% Get the serial number -> name map for this application
-get_therm_map() ->
-	Therms = case application:get_env(therms) of
+% Get an application env var with a default
+get_env(Which, Default) ->
+	case application:get_env(Which) of
 		{ok, T} -> T;
-		_ -> []
-	end,
+		_ -> Default
+	end.
+
+% get a dict from an env list of key/value mappings
+get_env_dict(Which) ->
 	lists:foldl(fun ({K, V}, Acc) ->
 			dict:update(K, fun(_) -> V end, V, Acc)
 		end,
-		dict:new(), Therms).
+		dict:new(), get_env(Which, [])).
+
+% Get the serial number -> name map for this application
+get_therm_map() ->
+	get_env_dict(therms).
 

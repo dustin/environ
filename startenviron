@@ -3,4 +3,5 @@
 # arch-tag: B8E4F73A-9D9B-11D8-B7F1-000A957659CC
 
 # see the -detached flag
-erl "$@" -noinput -boot environ
+# erl "$@" -noinput -boot environ
+erl "$@" -boot environ

@@ -109,4 +109,9 @@ lemp_loop(Socket, Id) ->
 		Unknown ->
 			error_logger:error_msg("lemp: Unhandled message:  ~p", [Unknown]),
 			lemp_loop(Socket, Id)
+		after 120000 ->
+			ok = lemp_send(Socket, 500, "timeout waiting for data"),
+			error_logger:error_msg("lemp:  timeout waiting for data", []),
+			gen_tcp:close(Socket),
+			lemp_exit(timeout, Id)
 	end.

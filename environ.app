@@ -7,7 +7,7 @@
 		 	lemp_serv, temp_listener ]},
 
          {registered, [temp_listener, temp_listener_events]},
-         {applications, [kernel,stdlib]},
+         {applications, [kernel,stdlib,smtp_client]},
 		 {mod, {environ, []}},
 		 {env, [{therms,
 			[

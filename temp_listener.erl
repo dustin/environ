@@ -20,6 +20,8 @@ init() ->
 	register(?MODULE, self()),
 	% register my event handler
 	gen_event:start_link({local, temp_listener_events}),
+	% Register the handler for the mailer (until I find a better place for this)
+	add_handler(mailer, []),
 	process_flag(trap_exit, true),
 	{ok, GAddr}=inet:getaddr("225.0.0.37", inet),
 	{ok, LAddr}=inet:getaddr("0.0.0.0", inet),

@@ -9,5 +9,5 @@
 {release,
 	{"environ_rel", "1.0"},
 	{erts, "5.2.3.6"},
-	[{kernel, "2.9"}, {stdlib, "1.12"}, {environ, "1.0"}]
+	[{kernel, "2.9"}, {stdlib, "1.12"}, {environ, "1.0"}, {smtp_client, "1.1"}]
 }.

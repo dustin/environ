@@ -52,6 +52,10 @@ loop(Port, Dict) ->
 			error_logger:error_msg("temp_listener: Unhandled message:  ~p\n",
 				[Unhandled]),
 			loop(Port, Dict)
+		after 180000 ->
+			Reason = "Been too long since I've heard from a thermometer.",
+			error_logger:error_msg("temp_listener: Exiting:  ~p\n", [Reason]),
+			exit(Reason)
 	end.
 
 % Get the dict from the process

@@ -11,12 +11,12 @@ init([Pid|Args]) ->
 	{ok, Pid}.
 
 % Handle a reading
-handle_event({reading, Key, Val, Vals}, Pid) ->
+handle_event({reading, Key, Name, Val, Vals}, Pid) ->
 	% Send the stuff from the event
-	Pid ! {reading, Key, Val, Vals},
+	Pid ! {reading, Key, Name, Val, Vals},
 	{ok, Pid};
 handle_event(Ev, Pid) ->
-	error_logger:error_msg("Unhandled event:  ~p", [Ev]),
+	error_logger:error_msg("lemp_handler: unhandled event:  ~p", [Ev]),
 	{ok, Pid}.
 
 terminate(How, What) ->

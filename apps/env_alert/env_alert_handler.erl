@@ -84,7 +84,7 @@ handle_event({reading, Key, Name, Val, Vals}, State) ->
 	{ok, NewState};
 
 handle_event(Ev, State) ->
-	error_logger:error_msg("Unhandled event:  ~p", [Ev]),
+	error_logger:error_msg("env_alert: unhandled event:  ~p", [Ev]),
 	{ok, State}.
 
 handle_call(Info, State) ->

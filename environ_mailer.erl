@@ -57,6 +57,7 @@ alert(Name, Val, Type, State) ->
 startupAlert() ->
 	case application:get_env(startup_alert_recipients) of
 		{ok, Recips} ->
+			error_logger:info_msg("Sending startup alert"),
 			MailServerHost = environ_utilities:get_env(mail_server, "mail"),
 			{ok, MailServer} = smtp_fsm:start(MailServerHost),
 			{ok, _Status} = smtp_fsm:ehlo(MailServer),
@@ -64,7 +65,8 @@ startupAlert() ->
 			lists:foreach(fun (To) ->
 					sendMessage(MailServer, To, "Environ startup", Msg)
 				end, Recips),
-			smtp_fsm:close(MailServer);
+			smtp_fsm:close(MailServer),
+			error_logger:info_msg("Sent startup alert");
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end.

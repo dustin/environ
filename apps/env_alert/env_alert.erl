@@ -22,7 +22,8 @@ init() ->
 	% on some systems, bad things happen otherwise
 	case application:get_env(startup_alert_recipients) of
 		{ok, [First|Rest]} ->
-			startupAlert([First|Rest]);
+			AlertRv = (catch startupAlert([First|Rest])),
+			error_logger:error_msg("startupAlert rv:  ~p", [AlertRv]);
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,
@@ -70,16 +71,17 @@ alert(Name, Val, Type, State) ->
 
 % Alert sent upon startup to indicate the system is coming up
 startupAlert(Recips) ->
-	error_logger:info_msg("Sending startup alert to ~p", [Recips]),
-		MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-		{ok, MailServer} = smtp_fsm:start(MailServerHost),
-		{ok, Status} = smtp_fsm:ehlo(MailServer),
-		Msg = io_lib:format("environ started on ~p~n", [node()]),
-		lists:foreach(fun (To) ->
-				sendMessage(MailServer, To, "Environ startup", Msg)
-			end, Recips),
-		smtp_fsm:close(MailServer),
-		error_logger:info_msg("Sent startup alert").
+	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
+	error_logger:info_msg("Sending startup alert to ~p via ~p",
+		[Recips, MailServerHost]),
+	{ok, MailServer} = smtp_fsm:start(MailServerHost),
+	{ok, Status} = smtp_fsm:ehlo(MailServer),
+	Msg = io_lib:format("environ started on ~p~n", [node()]),
+	lists:foreach(fun (To) ->
+			sendMessage(MailServer, To, "Environ startup", Msg)
+		end, Recips),
+	smtp_fsm:close(MailServer),
+	error_logger:info_msg("Sent startup alert").
 
 % Provide an updated reading for this device (possibly a new one)
 updateReading(Name, Val, State, Alert) ->

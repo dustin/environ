@@ -4,11 +4,14 @@ SHELL=/bin/sh
 
 DIRS=apps/temp_listener apps/lemp apps/env_alert
 
-EFLAGS=-pa apps/lemp -pa apps/temp_listener -pa apps/env_alert
+EFLAGS=-pa $(HOME)/lib/erlang/smtp_client-1.1/ebin/ \
+	-pa apps/lemp -pa apps/temp_listener -pa apps/env_alert
 
 .PHONY: tgz
 
-all:
+all: environ.boot
+
+all-subs:
 	for d in $(DIRS);  do \
 		(cd $$d && echo "*** Making in $$d" && $(MAKE)) \
 	done
@@ -16,7 +19,7 @@ all:
 
 tgz: environ.tar.gz
 
-environ.boot: all environ.rel environ.app
+environ.boot: all-subs environ.rel environ.app
 	erlc -W -v $(EFLAGS) environ.rel
 
 environ.tar.gz: environ.boot

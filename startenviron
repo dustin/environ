@@ -5,10 +5,12 @@
 # see the -detached flag
 
 # Cluster (rubik)
-# erl "$@" -sname temp -config configs/rubik -detached -noinput -boot environ
+# ./startenviron \
+#   -sname temp -config configs/rubik -detached -noinput -boot environ
 
 # Regular
-# erl "$@" -noinput -boot environ
+# ./startenviron -noinput -boot environ
 
 # interactive
-erl "$@" -boot environ
+erl "$@" -pa $HOME/lib/erlang/smtp_client-1.1/ebin/ \
+	-pa apps/lemp -pa apps/temp_listener -pa apps/env_alert -boot environ

@@ -9,7 +9,11 @@
 {release,
 	{"environ_rel", "1.0"},
 	{erts, "5.2.3.6"},
-	[{kernel, "2.9"}, {stdlib, "1.12"}, {environ, "1.0"},
-		{smtp_client, "1.1"},
-		{temp_listener, "1.0"}, {lemp_serv, "1.0"}, {env_alert, "1.0"}]
+	[	{kernel, "2.9"}, {stdlib, "1.12"},
+		{environ, "1.0", temporary},
+		{smtp_client, "1.1", temporary},
+		{temp_listener, "1.0", permanent},
+		{lemp_serv, "1.0", permanent},
+		{env_alert, "1.0", permanent
+		}]
 }.

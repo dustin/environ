@@ -17,10 +17,10 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting environ", []),
-	application:start(temp_listener, permanent),
-	application:start(lemp_serv, permanent),
+	application:start(temp_listener),
+	application:start(lemp_serv),
 	application:start(smtp_client),
-	application:start(env_alert, permanent),
+	application:start(env_alert),
 	{ok, self()}.
 
 stop(_State) -> ok.

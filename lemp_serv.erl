@@ -21,16 +21,11 @@ start(PortNum) when integer(PortNum) ->
 init(PortNum) ->
 	{ok, LS} = gen_tcp:listen(PortNum, [{reuseaddr, true}, {packet, 0},
 									{active, false}]),
-	Therms = [
-		{"1081841E000000DF", "bedroom"},
-		{"10258D2A000000EA", "backyard"},
-		{"10C8892A00000096", "livingroom"},
-		{"101D8A2A000000F7", "newmachineroom"},
-		{"10E8C214000000E4", "garage"},
-		{"1013A51E00000035", "guestroom"}
-		% {"2183110000C034BB", "dustinkeychain"},
-		% {"21508400004025AF", "kitchen"},
-		],
+	EnvTherms = application:get_env(therms),
+	Therms = case EnvTherms of
+			{ok, T} -> T;
+			_ -> []
+		end,
 	Map = lists:foldl(fun ({K, V}, Acc) ->
 			dict:update(K, fun(_) -> V end, V, Acc)
 		end,

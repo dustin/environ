@@ -3,9 +3,21 @@
 {application, environ,
         [{description, "Environmental monitoring."},
          {vsn, "1.0"},
-         {modules, [ ]},
+         {modules, [ environ ]},
 
          {registered, [temp_listener, temp_listener_events]},
-         {applications, [kernel,stdlib]}
+         {applications, [kernel,stdlib]},
+		 {mod, {environ, []}},
+		 {env, [{therms,
+			[
+				{"1081841E000000DF", "bedroom"},
+				{"10258D2A000000EA", "backyard"},
+				{"10C8892A00000096", "livingroom"},
+				{"101D8A2A000000F7", "newmachineroom"},
+				{"10E8C214000000E4", "garage"},
+				{"1013A51E00000035", "guestroom"}
+				% {"2183110000C034BB", "dustinkeychain"},
+				% {"21508400004025AF", "kitchen"},
+			]}]}
 ]}.
 

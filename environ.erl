@@ -7,7 +7,12 @@
 -behavior(application).
 
 % Supervisor functions.
--export([start/2, stop/1, config_change/3, start_phase/3, prep_stop/1]).
+-export([start/0,
+	start/2, stop/1, config_change/3, start_phase/3, prep_stop/1]).
+
+% easy start
+start() ->
+	application:start(environ).
 
 % application stuff
 start(_Type, _Args) ->

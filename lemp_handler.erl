@@ -20,5 +20,5 @@ handle_event(Ev, Pid) ->
 	{ok, Pid}.
 
 terminate(How, What) ->
-	error_logger:error_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]),
+	error_logger:info("lemp_handler terminating:  ~p: ~p~n", [How, What]),
 	ok.

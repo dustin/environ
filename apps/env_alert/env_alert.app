@@ -10,15 +10,15 @@
 		 {mod, {env_alert_app, []}},
 		 {env, [
 		 		{min_alert_interval, 3600},
-				{max_ttl_age, 300},
+				{max_ttl_age, 600},
 					{ranges, [
 						{"machineroom", {13, 27}},
 						{"bedroom", {10, 31}},
 						{"livingroom", {13, 30}},
 						{"guestroom", {8, 30}},
-						{"purple_mb", {15, 80}},
-						{"purple_cpu", {15, 80}},
-						{"purple_chip", {15, 80}},
+						{"purple_mb", {1, 80}},
+						{"purple_cpu", {1, 80}},
+						{"purple_chip", {1, 80}},
 						{"--default--", {-50,50}}
 					]},
 					{notifications, [

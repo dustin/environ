@@ -63,7 +63,8 @@ startupAlert() ->
 			Msg = io_lib:format("environ started on ~p~n", [node()]),
 			lists:foreach(fun (To) ->
 					sendMessage(MailServer, To, "Environ startup", Msg)
-				end, Recips);
+				end, Recips),
+			smtp_fsm:close(MailServer);
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end.

@@ -81,7 +81,11 @@ updateReading(Name, Val, State, Alert) ->
 				TS#tstate{lastalert=AlertTS};
 			_ ->
 				% Mark the last alert as the beginning of time
-				#tstate{lastalert={0,0,0}}
+				AlertTS = case Alert of
+							true -> now();
+							_ -> {0,0,0}
+						end,
+				#tstate{lastalert=AlertTS}
 		end,
 	TState#tstate{lastseen=now(), lastreading=Val}.
 

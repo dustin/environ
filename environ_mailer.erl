@@ -144,8 +144,8 @@ handle_event({reading, Key, Val, Vals}, State) ->
 		end,
 	% Get the acceptable range for this event
 	Range = getRange(Name, State#mstate.ranges),
-	error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p~n",
-		[Name, Val, Range]),
+	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p~n",
+		% [Name, Val, Range]),
 	% Check the range and get the new reading
 	NewReading = checkRange(Name, Key, Val, Range, State),
 	% Add the new reading

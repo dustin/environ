@@ -32,7 +32,8 @@
 					]},
 					{notifications, [
 						"dustin@spy.net",
-						"noelani@spy.net"
+						"noelani@spy.net",
+						"dsallings@tmomail.net"
 					]},
 					{startup_alert_recipients, [
 						"dustin@spy.net"

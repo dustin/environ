@@ -5,7 +5,7 @@
 # see the -detached flag
 
 # Cluster (rubik)
-# erl "$@" -sname temp -config rubik -detached -noinput -boot environ
+# erl "$@" -sname temp -config configs/rubik -detached -noinput -boot environ
 
 # Regular
 # erl "$@" -noinput -boot environ

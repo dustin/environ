@@ -149,8 +149,8 @@ loop(State) ->
 			loop(NewState);
 		% An unconditional alert (no time check)
 		{uncond_alert, Recips, Subject, Message} ->
-			error_logger:error_msg("Got uncondtional alert:  ~p ~p ~p",
-				[Recips, Subject, Message]),
+			% error_logger:error_msg("Got uncondtional alert:  ~p ~p ~p",
+			% 	[Recips, Subject, Message]),
 			genAlert(Recips, Subject, Message),
 			loop(State);
 		% event handler shutdown notification

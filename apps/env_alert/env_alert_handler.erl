@@ -63,11 +63,10 @@ cleanupTStates(State) ->
 	TStates = State#estate.states,
 	NewTStates = dict:fold(fun(K, V, Acc) ->
 			% V is a tstate
-			% io:format("~p's record:  ~p~n", [K, V]),
 			TAge = timer:now_diff(now(), V#tstate.lastseen) / 1000000,
 			MaxAge = getMaxTTL(K),
-			error_logger:info_msg("Age of ~s is ~p, max ttl is ~p",
-				[K, TAge, MaxAge]),
+			% error_logger:info_msg("Age of ~s is ~p, max ttl is ~p",
+			% 	[K, TAge, MaxAge]),
 			if (TAge > MaxAge) ->
 					error_logger:error_msg("~p is too old!  ~psecs",
 						[K, TAge]),

@@ -3,7 +3,8 @@
 %%
 
 -module(temp_listener).
--export([start/0, start_link/0, getdict/0, getval/1, add_handler/2]).
+-export([start/0, start_link/0, getdict/0, getval/1,
+	add_handler/2, delete_handler/2]).
 -export([init/0]).
 
 % Spawn the process.
@@ -71,3 +72,8 @@ getval(SN) ->
 add_handler(Mod, Args) ->
 	error_logger:info_msg("Registering handler:  (~p, ~p)~n", [Mod, Args]),
 	gen_event:add_handler(temp_listener_events, Mod, Args).
+
+% Unregister a handler
+delete_handler(Mod, Args) ->
+	error_logger:info_msg("Unregistering handler:  (~p, ~p)~n", [Mod, Args]),
+	gen_event:delete_handler(temp_listener_events, Mod, Args).

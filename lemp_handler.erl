@@ -3,7 +3,7 @@
 %%
 
 -module(lemp_handler).
--export([init/1, handle_event/2]).
+-export([init/1, handle_event/2, terminate/2]).
 
 % Init
 init([Socket|Args]) ->
@@ -21,3 +21,6 @@ handle_event({reading, Key, Val, Vals}, Socket) ->
 handle_event(Ev, Socket) ->
 	error_logger:error_msg("Unhandled event:  ~p~n", [Ev]),
 	{ok, Socket}.
+
+terminate(How, What) ->
+	error_logger:error_msg("lemp_handler terminating:  ~p: ~p~n", [How, What]).

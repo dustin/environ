@@ -4,7 +4,7 @@
 
 -module(lemp_serv).
 
--export([start/0, start/1, init/1, lemp/1]).
+-export([start/0, start/1, init/1, lemp/2]).
 
 % Starting the server
 start() ->
@@ -21,22 +21,22 @@ start(PortNum) when integer(PortNum) ->
 init(PortNum) ->
 	{ok, LS} = gen_tcp:listen(PortNum, [{reuseaddr, true}, {packet, 0},
 									{active, false}]),
-	accept_loop(LS).
+	accept_loop(LS, 1).
 
 % Accept incoming connections
-accept_loop(LS) ->
+accept_loop(LS, Count) ->
 	{ok, NS} = gen_tcp:accept(LS),
-	Pid = spawn_link(?MODULE, lemp, [NS]),
+	Pid = spawn(?MODULE, lemp, [NS, Count]),
 	gen_tcp:controlling_process(NS, Pid),
 	Pid ! go_ahead,
-	accept_loop(LS).
+	accept_loop(LS, Count + 1).
 
 
 %
 % The individual connections
 %
 
-lemp(Socket) ->
+lemp(Socket, Id) ->
 	process_flag(trap_exit, true),
 	% Wait for sync
 	receive
@@ -49,26 +49,32 @@ lemp(Socket) ->
 				++ float_to_list(V) ++ [13,10]),
 			Acc
 		end, ok, temp_listener:getdict()),
-	ok = temp_listener:add_handler(lemp_handler, [Socket]),
-	lemp_loop(Socket).
+	ok = temp_listener:add_handler({lemp_handler, Id}, [Socket, Id]),
+	lemp_loop(Socket, Id).
 
-lemp_loop(Socket) ->
+lemp_exit(Reason, Id) ->
+	error_logger:info_msg("lemp:  deleting handler~n", []),
+	temp_listener:delete_handler({lemp_handler, Id}, []),
+	exit(closed).
+
+lemp_loop(Socket, Id) ->
 	receive
 		{tcp, Socket, Bytes} ->
 			error_logger:error_msg("lemp: Received unwanted data:  ~p~n",
 				[Bytes]),
-			lemp_loop(Socket);
+			lemp_loop(Socket, Id);
 		{tcp_closed, Socket} ->
 			error_logger:info_msg("lemp:  socket closed~n", []),
-			exit(closed);
+			lemp_exit(closed, Id);
 		{tcp_error, Socket, Reason} ->
 			error_logger:error_msg("lemp:  socket error:  ~p~n", [Reason]),
-			exit(Reason);
+			gen_tcp:close(Socket),
+			lemp_exit(Reason, Id);
 		{'EXIT', U, Why} ->
 			error_logger:info_msg("lemp: exiting:  ~p~n", [Why]),
 			gen_tcp:close(Socket),
-			exit(Why);
+			lemp_exit(Why, Id);
 		Unknown ->
 			error_logger:error_msg("lemp: Unhandled message:  ~p~n", [Unknown]),
-			lemp_loop(Socket)
+			lemp_loop(Socket, Id)
 	end.

@@ -36,6 +36,7 @@ accept_loop(LS, Count) ->
 % The individual connections
 %
 
+% Set up and loop
 lemp(Socket, Id) ->
 	process_flag(trap_exit, true),
 	% Wait for sync
@@ -52,20 +53,25 @@ lemp(Socket, Id) ->
 	ok = temp_listener:add_handler({lemp_handler, Id}, [self(), Id]),
 	lemp_loop(Socket, Id).
 
+% remvoe the handler and exit
 lemp_exit(Reason, Id) ->
 	error_logger:info_msg("lemp:  deleting handler~n", []),
 	ok = temp_listener:delete_handler({lemp_handler, Id}, []),
 	exit(closed).
 
+% Message dispatch for the server processes
 lemp_loop(Socket, Id) ->
 	receive
+		% Outbound messages
 		{reading, Key, Val, Vals} ->
 			ok = gen_tcp:send(Socket, [Key, 9, float_to_list(Val), 13, 10]),
 			lemp_loop(Socket, Id);
+		% Inbound messages
 		{tcp, Socket, Bytes} ->
 			error_logger:error_msg("lemp: Received unwanted data:  ~p~n",
 				[Bytes]),
 			lemp_loop(Socket, Id);
+		% Control messages
 		{tcp_closed, Socket} ->
 			error_logger:info_msg("lemp:  socket closed~n", []),
 			lemp_exit(closed, Id);
@@ -73,10 +79,12 @@ lemp_loop(Socket, Id) ->
 			error_logger:error_msg("lemp:  socket error:  ~p~n", [Reason]),
 			gen_tcp:close(Socket),
 			lemp_exit(Reason, Id);
+		% Deaths
 		{'EXIT', U, Why} ->
 			error_logger:info_msg("lemp: exiting:  ~p~n", [Why]),
 			gen_tcp:close(Socket),
 			lemp_exit(Why, Id);
+		% Unknown
 		Unknown ->
 			error_logger:error_msg("lemp: Unhandled message:  ~p~n", [Unknown]),
 			lemp_loop(Socket, Id)

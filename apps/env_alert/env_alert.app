@@ -32,7 +32,7 @@
 				{startup_alert_recipients, [
 					"dustin@spy.net", "dsallings@2wire.com"
 				]},
-				{mail_server, "localhost"},
+				{mail_server, "mail.west.spy.net"},
 				{mail_sender, "<dustin+tempalert@spy.net>"}
 			]}
 ]}.

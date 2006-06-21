@@ -53,35 +53,12 @@ startHandler(Owner) ->
 			exit(Reason)
 	end.
 
-% Send an individual message.
-sendMessage(MailServer, To, Subject, Body) ->
-	error_logger:info_msg("Sending to ~p", [To]),
-	From = environ_utilities:get_env(mail_sender, "dustin@spy.net"),
-	Msg = email_msg:simp_msg(From, To, Subject, Body),
-	{ok, _Status} = smtp_fsm:rset(MailServer),
-	ok = smtp_fsm:sendemail(MailServer, From, To, Msg).
-
-% The core of the generic alert (to be wrapped for safety)
-doGenAlert(Recips, MailServerHost, Subject, Msg) ->
-	{ok, MailServer} = smtp_fsm:start(MailServerHost),
-	{ok, _Status} = smtp_fsm:ehlo(MailServer),
-	lists:foreach(fun (To) ->
-			sendMessage(MailServer, To, Subject, Msg)
-		end, Recips),
-	smtp_fsm:close(MailServer).
-
 % Generic alert send function
 genAlert(Recips, Subject, Msg) ->
-	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-	error_logger:info_msg("Sending generic alert to ~p via ~p~n",
-		[Recips, MailServerHost]),
-	case catch doGenAlert(Recips, MailServerHost, Subject, Msg) of
-		ok ->
-			error_logger:info_msg("Sent generic alert");
-		E ->
-			error_logger:error_msg("Failed to send alert to ~p via ~p:~n~p~n",
-				[Recips, MailServerHost, E])
-	end.
+	Server = environ_utilities:get_env(mail_server, "mail"),
+	lists:foreach(fun (To) ->
+		env_alert_mailer:send_message(To, Server, Subject, Msg)
+		end, Recips).
 
 % Send an alert -- this only happens within a mnesia transaction
 alert(Name, Val, Type) ->

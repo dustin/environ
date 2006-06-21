@@ -12,12 +12,15 @@
 
 % easy start
 start() ->
-	mnesia:start(),
 	application:start(env_alert).
 
 % application stuff
 start(_Type, _Args) ->
-	error_logger:info_msg("Starting env_alert", []),
+	error_logger:info_msg("Starting env_alert~n", []),
+	mnesia:start(),
+	error_logger:info_msg("Started mnesia~n", []),
+	env_alert_mailer:start_link(),
+	error_logger:info_msg("Started mailer.~n", []),
 	supervisor:start_link(gen_sup, [
 			{{one_for_one, 2, 60},
 					[{env_alert, {env_alert, start_link, []},
@@ -26,7 +29,10 @@ start(_Type, _Args) ->
 		]).
 
 stop(_State) ->
+	error_logger:info_msg("Stopping env_alert_app~n", []),
 	mnesia:stop(),
+	env_alert_mailer:stop(),
+	error_logger:info_msg("Completed stop of env_alert_app~n", []),
 	ok.
 
 config_change(Changed, New, Removed) ->
@@ -40,5 +46,5 @@ start_phase(Phase, StartType, PhaseArgs) ->
 	ok.
 
 prep_stop(State) ->
-	error_logger:info_msg("Prepping stop", []),
+	error_logger:info_msg("Prepping env_alert_app stop~n", []),
 	State.

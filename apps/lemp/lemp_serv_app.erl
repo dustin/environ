@@ -19,7 +19,9 @@ start(_Type, _Args) ->
 	error_logger:info_msg("Starting lemp_serv", []),
 	lemp_serv:start_link().
 
-stop(_State) -> ok.
+stop(_State) ->
+	error_logger:info_msg("Stopping lemp_serv_app~n", []),
+	ok.
 
 config_change(Changed, New, Removed) ->
 	error_logger:info_msg("Config changed:  [~p, ~p, ~p]",
@@ -32,5 +34,5 @@ start_phase(Phase, StartType, PhaseArgs) ->
 	ok.
 
 prep_stop(State) ->
-	error_logger:info_msg("Prepping stop", []),
+	error_logger:info_msg("Prepping stop of lemp_serv_app~n", []),
 	State.

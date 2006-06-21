@@ -6,7 +6,7 @@
 -export([init/1, handle_event/2, terminate/2]).
 
 % Init
-init([Pid|Args]) ->
+init([Pid|_Args]) ->
 	error_logger:info_msg("Starting event handler with:  ~p", [Pid]),
 	{ok, Pid}.
 

@@ -5,8 +5,7 @@
 -module(env_alert).
 -export([start/0, start_link/0, init/0, startHandler/1]).
 
--record(tstate, {lastalert}).
--record(mstate, {names, states}).
+-include("env_alert.hrl").
 
 % Startup and stuff
 start() ->
@@ -27,9 +26,20 @@ init() ->
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,
-	Names = environ_utilities:get_therm_map(),
 	startHandler(self()),
-	loop(#mstate{names=Names, states=dict:new()}).
+	% Send the cleanup message
+	timer:send_after(1000, cleanup),
+	loop().
+
+% Find the maximum TTL age for the named device
+getMaxTTL(Name) ->
+	Ttls = environ_utilities:get_env_dict(env_alert, max_ttl_ages),
+	case dict:find(Name, Ttls) of
+		{ok, Rv} -> Rv;
+		_ ->
+			{ok, Rv} = dict:find("--default--", Ttls),
+			Rv
+	end.
 
 startHandler(Owner) ->
 	% Add the handler
@@ -51,21 +61,30 @@ sendMessage(MailServer, To, Subject, Body) ->
 	{ok, _Status} = smtp_fsm:rset(MailServer),
 	ok = smtp_fsm:sendemail(MailServer, From, To, Msg).
 
-% Generic alert send function
-genAlert(Recips, Subject, Msg) ->
-	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
-	error_logger:info_msg("Sending generic alert to ~p via ~p",
-		[Recips, MailServerHost]),
+% The core of the generic alert (to be wrapped for safety)
+doGenAlert(Recips, MailServerHost, Subject, Msg) ->
 	{ok, MailServer} = smtp_fsm:start(MailServerHost),
-	{ok, Status} = smtp_fsm:ehlo(MailServer),
+	{ok, _Status} = smtp_fsm:ehlo(MailServer),
 	lists:foreach(fun (To) ->
 			sendMessage(MailServer, To, Subject, Msg)
 		end, Recips),
-	smtp_fsm:close(MailServer),
-	error_logger:info_msg("Sent generic alert").
+	smtp_fsm:close(MailServer).
 
-% Send an alert
-alert(Name, Val, Type, State) ->
+% Generic alert send function
+genAlert(Recips, Subject, Msg) ->
+	MailServerHost = environ_utilities:get_env(mail_server, "mail"),
+	error_logger:info_msg("Sending generic alert to ~p via ~p~n",
+		[Recips, MailServerHost]),
+	case catch doGenAlert(Recips, MailServerHost, Subject, Msg) of
+		ok ->
+			error_logger:info_msg("Sent generic alert");
+		E ->
+			error_logger:error_msg("Failed to send alert to ~p via ~p:~n~p~n",
+				[Recips, MailServerHost, E])
+	end.
+
+% Send an alert -- this only happens within a mnesia transaction
+alert(Name, Val, Type) ->
 	error_logger:error_msg("Sending an alert for ~p (~p when  ~p)",
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
@@ -73,93 +92,100 @@ alert(Name, Val, Type, State) ->
 	% Send email to everyone who should receive one
 	Recips = environ_utilities:get_env(notifications, []),
 	genAlert(Recips, Subject, Body),
-	% Now return the new reading val (an alert)
-	updateReading(Name, Val, State, true).
+	% Update mnesia so we note the last time we sent this particular alert
+	ok = mnesia:write(#alert_state{id=Name, reading=Val, lastalert=now()}).
 
 % Alert sent upon startup to indicate the system is coming up
 startupAlert(Recips) ->
 	genAlert(Recips, "Environ startup",
 		io_lib:format("environ started on ~p~n", [node()])).
 
-% Provide an updated reading for this device (possibly a new one)
-updateReading(Name, Val, State, Alert) ->
-	TStates = State#mstate.states,
-	case dict:find(Name, TStates) of
-			% Already seen, mark it
-			{ok, TS} ->
-				AlertTS = case Alert of
-							true -> now();
-							_ -> TS#tstate.lastalert
-						end,
-				TS#tstate{lastalert=AlertTS};
-			_ ->
-				% Mark the last alert as the beginning of time
-				AlertTS = case Alert of
-							true -> now();
-							_ -> {0,0,0}
-						end,
-				#tstate{lastalert=AlertTS}
-		end.
-
 % A thermometer has been found to be out of range.  We will send out an alert
 % if we haven't sent one out too recently.  Let's find out...
-outOfRange(Name, Val, Type, State) ->
+outOfRange(Name, Val, Type) ->
 	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p",
 		[Name, Val, Type]),
 	% Find the minimum amount of time that must pass between alerts
 	MinAlertInterval = environ_utilities:get_env(min_alert_interval, 3600),
 	% Conditionally deliver the alert.  If it's been long enough, or we can't
 	% remember sending an alert, do it.
-	NewTState = case dict:find(Name, State#mstate.states) of
-		{ok, TState} ->
-			% Check out long it's been since we've sent an alert
-			Tdiff = timer:now_diff(now(), TState#tstate.lastalert) / 1000000,
+	F = fun() ->
+		case mnesia:read({alert_state, Name}) of
+		[] ->
+			alert(Name, Val, Type);
+		[E] -> 
+			Tdiff = timer:now_diff(
+				now(), E#alert_state.lastalert) / 1000000,
 			if (Tdiff >= MinAlertInterval) ->
-					error_logger:error_msg(
+					error_logger:info_msg(
 						"Last alert for ~p sent ~ps ago, sending",
-						[Name, Tdiff]),
-					alert(Name, Val, Type, State);
+							[Name, Tdiff]),
+					alert(Name, Val, Type);
 				true ->
-					error_logger:error_msg(
+					error_logger:info_msg(
 						"Last alert for ~p sent ~ps ago, holding",
-						[Name, Tdiff]),
-					% Say false here so it won't count this as an alert
-					updateReading(Name, Val, State, false)
-			end;
-		_ ->
-			% Go ahead and send the alert.
-			error_logger:error_msg(
-				"Can't remember sending an alert for ~p, sending", [Name]),
-			alert(Name, Val, Type, State)
+							[Name, Tdiff])
+			end
+		end
 	end,
-	NewReadingState = dict:update(Name, fun(_) -> NewTState end, NewTState,
-		State#mstate.states),
-	State#mstate{states = NewReadingState}.
+	{atomic, _ResultOfFun} = mnesia:transaction(F).
 
-loop(State) ->
+doCleanup() ->
+	% error_logger:info_msg("Cleaning up~n", []),
+	Now = now(),
+	F = fun() ->
+		lists:foreach(fun(I) ->
+				% Check each record to see if it's too old.
+				TAge = timer:now_diff(Now, I#therms.ts) / 1000000,
+				MaxAge = getMaxTTL(I#therms.id),
+				if (TAge > MaxAge) ->
+					error_logger:error_msg("~p is too old!  ~psecs",
+						[I#therms.id, TAge]),
+					genAlert(environ_utilities:get_env(notifications, []),
+						io_lib:format("Temperature alert: ~s is too old",
+							[I#therms.id]),
+						io_lib:format("~s is too old, last saw ~.2f (~p > ~p)",
+							[I#therms.id, I#therms.reading, TAge, MaxAge])),
+					% Update mnesia
+					ok = mnesia:write(#therms{id=I#therms.id,
+						active=false, reading=I#therms.reading,
+						ts=I#therms.ts});
+				true -> true
+				end
+			end,
+			mnesia:match_object(therms, {therms, '_', true, '_', '_'}, read))
+	end,
+	{atomic, _ResultOfFun} = mnesia:transaction(F).
+
+loop() ->
 	receive
 		% Ping on a reading, just to make sure it's still alive
 		ping ->
-			loop(State);
+			loop();
+		cleanup ->
+			doCleanup(),
+			% Reschedule
+			timer:send_after(60000, cleanup),
+			loop();
 		% An alert
 		{alert, Name, Val, RangeRv} ->
 			error_logger:error_msg("Got alert:  ~p ~p ~p",
 				[Name, Val, RangeRv]),
-			NewState  = outOfRange(Name, Val, RangeRv, State),
-			loop(NewState);
+			outOfRange(Name, Val, RangeRv),
+			loop();
 		% An unconditional alert (no time check)
 		{uncond_alert, Recips, Subject, Message} ->
-			% error_logger:error_msg("Got uncondtional alert:  ~p ~p ~p",
+			% error_logger:error_msg("Got unconditional alert:  ~p ~p ~p",
 			% 	[Recips, Subject, Message]),
 			genAlert(Recips, Subject, Message),
-			loop(State);
+			loop();
 		% event handler shutdown notification
 		{gen_event_EXIT, env_alert_handler, shutdown} ->
 			error_logger:error_msg("env_alert_handler shutdown, stopping");
 		% all other events
 		Unknown ->
 			error_logger:error_msg("Got unknown message:  ~p", [Unknown])
-		after 60000 ->
+		after 120000 ->
 			Reason = "Too long without a message.",
 			error_logger:error_msg("env_alert: Exiting:  ~p", [Reason]),
 			exit(Reason)

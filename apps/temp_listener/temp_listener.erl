@@ -33,7 +33,7 @@ init() ->
 loop(Port, Dict) ->
 	receive
 		% A UDP message
-		{udp, Port, Raddr, Rport, S} ->
+		{udp, Port, _Raddr, _Rport, S} ->
 			% io:format("~p\n", [lists:sublist(S, (length(S)-1))]),
 			Vals = string:tokens(S, "\t"),
 			Key  = lists:nth(2, Vals),

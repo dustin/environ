@@ -9,4 +9,4 @@
 -export([init/1]).
 
 % Generic supervisor initialization
-init([Rv|Args]) -> {ok, Rv}.
+init([Rv|_Args]) -> {ok, Rv}.

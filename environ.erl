@@ -17,13 +17,16 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting environ", []),
+	mnesia:start(),
 	application:start(temp_listener),
 	application:start(lemp_serv),
 	application:start(smtp_client),
 	application:start(env_alert),
 	{ok, self()}.
 
-stop(_State) -> ok.
+stop(_State) ->
+	mnesia:stop(),
+	ok.
 
 config_change(Changed, New, Removed) ->
 	error_logger:info_msg("Config changed:  [~p, ~p, ~p]",

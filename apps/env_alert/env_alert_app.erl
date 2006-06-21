@@ -12,6 +12,7 @@
 
 % easy start
 start() ->
+	mnesia:start(),
 	application:start(env_alert).
 
 % application stuff
@@ -24,7 +25,9 @@ start(_Type, _Args) ->
 					]}
 		]).
 
-stop(_State) -> ok.
+stop(_State) ->
+	mnesia:stop(),
+	ok.
 
 config_change(Changed, New, Removed) ->
 	error_logger:info_msg("Config changed:  [~p, ~p, ~p]",

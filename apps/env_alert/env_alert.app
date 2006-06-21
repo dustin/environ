@@ -26,15 +26,14 @@
 					{"--default--", {-50,50}}
 				]},
 				{notifications, [
-					"dustin@spy.net",
-					"noelani@spy.net",
-					"dsallings@tmomail.net"
+					"dustin@spy.net", "noelani@spy.net",
+					"dsallings@2wire.com"
 				]},
 				{startup_alert_recipients, [
-					"dustin@spy.net"
+					"dustin@spy.net", "dsallings@2wire.com"
 				]},
-				{mail_server, "mail.west.spy.net"},
-				{mail_sender, "dustin+tempalert@spy.net"}
+				{mail_server, "localhost"},
+				{mail_sender, "<dustin+tempalert@spy.net>"}
 			]}
 ]}.
 

@@ -12,5 +12,6 @@
 # ./startenviron -noinput -boot environ
 
 # interactive
-erl "$@" -pa $HOME/lib/erlang/smtp_client-1.1/ebin/ \
+erl "$@" -mnesia dir "\"$HOME/tmp/mnesia\"" \
+	-pa $HOME/lib/erlang/smtp_client-1.1/ebin/ \
 	-pa apps/lemp -pa apps/temp_listener -pa apps/env_alert -boot environ

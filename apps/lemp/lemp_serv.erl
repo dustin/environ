@@ -68,8 +68,8 @@ lemp(Socket, Map, Id) ->
 	ok = temp_listener:add_handler({lemp_handler, Id}, [self(), Id]),
 	lemp_loop(Socket, Id).
 
-% remvoe the handler and exit
-lemp_exit(Reason, Id) ->
+% remove the handler and exit
+lemp_exit(_Reason, Id) ->
 	error_logger:info_msg("lemp:  deleting handler", []),
 	ok = temp_listener:delete_handler({lemp_handler, Id}, []),
 	exit(closed).
@@ -84,7 +84,7 @@ lemp_send(Socket, Status, Message) when integer(Status) ->
 lemp_loop(Socket, Id) ->
 	receive
 		% Outbound messages
-		{reading, Key, Name, Val, Vals} ->
+		{reading, Key, Name, Val, _Vals} ->
 			ok = lemp_send(Socket, 200, lemp_temp_data(Key, Name, Val)),
 			lemp_loop(Socket, Id);
 		% Inbound messages
@@ -101,7 +101,7 @@ lemp_loop(Socket, Id) ->
 			gen_tcp:close(Socket),
 			lemp_exit(Reason, Id);
 		% Deaths
-		{'EXIT', U, Why} ->
+		{'EXIT', _U, Why} ->
 			error_logger:info_msg("lemp: exiting:  ~p", [Why]),
 			gen_tcp:close(Socket),
 			lemp_exit(Why, Id);

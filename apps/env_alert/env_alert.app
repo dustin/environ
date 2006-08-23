@@ -27,10 +27,10 @@
 				]},
 				{notifications, [
 					"dustin@spy.net", "noelani@spy.net",
-					"dsallings@2wire.com"
+					"dsallings@tmomail.net"
 				]},
 				{startup_alert_recipients, [
-					"dustin@spy.net", "dsallings@2wire.com"
+					"dustin@spy.net", "dsallings@tmomail.net"
 				]},
 				{mail_server, "mail.west.spy.net"},
 				{mail_sender, "<dustin+tempalert@spy.net>"}

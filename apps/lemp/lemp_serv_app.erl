@@ -19,8 +19,9 @@ start(_Type, _Args) ->
 	error_logger:info_msg("Starting lemp_serv", []),
 	lemp_serv:start_link().
 
-stop(_State) ->
+stop(LempPid) ->
 	error_logger:info_msg("Stopping lemp_serv_app~n", []),
+	LempPid ! stop,
 	ok.
 
 config_change(Changed, New, Removed) ->

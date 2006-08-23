@@ -31,12 +31,25 @@ init(PortNum) ->
 
 % Accept incoming connections
 accept_loop(LS, Map, Count) ->
-	{ok, NS} = gen_tcp:accept(LS),
-	Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
-	gen_tcp:controlling_process(NS, Pid),
-	Pid ! go_ahead,
-	accept_loop(LS, Map, Count + 1).
-
+	case gen_tcp:accept(LS, 5000) of
+		{ok, NS} ->
+			Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
+			gen_tcp:controlling_process(NS, Pid),
+			Pid ! go_ahead;
+		{error, timeout} ->
+			ok
+	end,
+	% Check to see if there's a stop message.
+	receive
+		stop ->
+			error_logger:info_msg("lemp_serv received stop message.~n", []),
+			gen_tcp:shutdown(LS, read_write);
+		M ->
+			error_logger:error_msg("Received unexpected data: ~p~n", [M]),
+			accept_loop(LS, Map, Count + 1)
+		after 1 ->
+			accept_loop(LS, Map, Count + 1)
+	end.
 
 %
 % The individual connections
@@ -70,7 +83,7 @@ lemp(Socket, Map, Id) ->
 
 % remove the handler and exit
 lemp_exit(_Reason, Id) ->
-	error_logger:info_msg("lemp:  deleting handler", []),
+	error_logger:info_msg("lemp:  deleting handler~n", []),
 	ok = temp_listener:delete_handler({lemp_handler, Id}, []),
 	exit(closed).
 
@@ -89,29 +102,29 @@ lemp_loop(Socket, Id) ->
 			lemp_loop(Socket, Id);
 		% Inbound messages
 		{tcp, Socket, Bytes} ->
-			error_logger:error_msg("lemp: Received unwanted data:  ~p",
+			error_logger:error_msg("lemp: Received unwanted data:  ~p~n",
 				[Bytes]),
 			lemp_loop(Socket, Id);
 		% Control messages
 		{tcp_closed, Socket} ->
-			error_logger:info_msg("lemp:  socket closed", []),
+			error_logger:info_msg("lemp:  socket closed~n", []),
 			lemp_exit(closed, Id);
 		{tcp_error, Socket, Reason} ->
-			error_logger:error_msg("lemp:  socket error:  ~p", [Reason]),
+			error_logger:error_msg("lemp:  socket error:  ~p~n", [Reason]),
 			gen_tcp:close(Socket),
 			lemp_exit(Reason, Id);
 		% Deaths
 		{'EXIT', _U, Why} ->
-			error_logger:info_msg("lemp: exiting:  ~p", [Why]),
+			error_logger:info_msg("lemp: exiting:  ~p~n", [Why]),
 			gen_tcp:close(Socket),
 			lemp_exit(Why, Id);
 		% Unknown
 		Unknown ->
-			error_logger:error_msg("lemp: Unhandled message:  ~p", [Unknown]),
+			error_logger:error_msg("lemp: Unhandled message:  ~p~n", [Unknown]),
 			lemp_loop(Socket, Id)
 		after 120000 ->
 			ok = lemp_send(Socket, 500, "timeout waiting for data"),
-			error_logger:error_msg("lemp:  timeout waiting for data", []),
+			error_logger:error_msg("lemp:  timeout waiting for data~n", []),
 			gen_tcp:close(Socket),
 			lemp_exit(timeout, Id)
 	end.

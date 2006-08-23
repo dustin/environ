@@ -24,16 +24,16 @@ init() ->
 	{ok, _Pid} = gen_event:start_link({local, temp_listener_events}),
 	{ok, GAddr}=inet:getaddr("225.0.0.37", inet),
 	{ok, LAddr}=inet:getaddr("0.0.0.0", inet),
-	{ok, Port} = gen_udp:open(6789, [{add_membership,{GAddr,LAddr}}]),
-	loop(Port, dict:new()).
+	{ok, Socket} = gen_udp:open(6789, [{add_membership,{GAddr,LAddr}}]),
+	loop(Socket, dict:new()).
 
 % Look for messages via multicast and keep a dict of the current values.
 % Also, look for requests from other processes that want current temperature
 % inforamtion.
-loop(Port, Dict) ->
+loop(Socket, Dict) ->
 	receive
 		% A UDP message
-		{udp, Port, _Raddr, _Rport, S} ->
+		{udp, Socket, _Raddr, _Rport, S} ->
 			% io:format("~p\n", [lists:sublist(S, (length(S)-1))]),
 			Vals = string:tokens(S, "\t"),
 			Key  = lists:nth(2, Vals),
@@ -41,22 +41,26 @@ loop(Port, Dict) ->
 			Name = environ_utilities:get_therm_name(Key),
 			gen_event:notify(temp_listener_events,
 				{reading, Key, Name, Val, Vals}),
-			loop(Port, dict:update(Key, fun(_) -> Val end, Val, Dict));
+			loop(Socket, dict:update(Key, fun(_) -> Val end, Val, Dict));
 		% A lookup message for a specific serial number
 		{lookup, From, SN} ->
 			From ! dict:fetch(SN, Dict),
-			loop(Port, Dict);
+			loop(Socket, Dict);
 		% Just get the whole dict (useful for debugging)
 		{getdict, From} ->
 			From ! Dict,
-			loop(Port, Dict);
+			loop(Socket, Dict);
+		stop ->
+			error_logger:info_msg("temp_listener: received stop message~n", []),
+			gen_event:stop(temp_listener_events),
+			ok = gen_udp:close(Socket);
 		% Anything else
 		Unhandled ->
-			error_logger:error_msg("temp_listener: Unhandled message:  ~p",
+			error_logger:error_msg("temp_listener: Unhandled message:  ~p~n",
 				[Unhandled])
 		after 180000 ->
 			Reason = "Been too long since I've heard from a thermometer.",
-			error_logger:error_msg("temp_listener: Exiting:  ~p", [Reason]),
+			error_logger:error_msg("temp_listener: Exiting:  ~p~n", [Reason]),
 			exit(Reason)
 	end.
 
@@ -76,15 +80,15 @@ getval(SN) ->
 
 % Add an event handler for temperature events
 add_handler(Mod, Args) ->
-	error_logger:info_msg("Registering handler:  (~p, ~p)", [Mod, Args]),
+	error_logger:info_msg("Registering handler:  (~p, ~p)~n", [Mod, Args]),
 	gen_event:add_handler(temp_listener_events, Mod, Args).
 
 add_sup_handler(Mod, Args) ->
-	error_logger:info_msg("Registering supervised handler:  (~p, ~p)",
+	error_logger:info_msg("Registering supervised handler:  (~p, ~p)~n",
 		[Mod, Args]),
 	gen_event:add_sup_handler(temp_listener_events, Mod, Args).
 
 % Unregister a handler
 delete_handler(Mod, Args) ->
-	error_logger:info_msg("Unregistering handler:  (~p, ~p)", [Mod, Args]),
+	error_logger:info_msg("Unregistering handler:  (~p, ~p)~n", [Mod, Args]),
 	gen_event:delete_handler(temp_listener_events, Mod, Args).

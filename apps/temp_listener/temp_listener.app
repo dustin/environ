@@ -1,5 +1,3 @@
-% arch-tag: 324C9B8F-A22C-11D8-AE92-000A957659CC
-
 {application, temp_listener,
 	[{description, "Listen to temperature announcements, send local events"},
 	 {vsn, "1.0"},

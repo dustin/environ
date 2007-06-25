@@ -1,6 +1,5 @@
 %%
 %% Copyright (c) 2006  Dustin Sallings <dustin@spy.net>
-%% arch-tag: A5CB5412-1FF6-4580-8462-EDB3D7434815
 %%
 
 -module(setup_schema).

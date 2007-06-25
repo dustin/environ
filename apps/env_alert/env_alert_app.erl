@@ -1,5 +1,5 @@
 %%
-%% arch-tag: 920D3984-A232-11D8-93DC-000A957659CC
+%%
 %%
 
 -module(env_alert_app).

@@ -1,5 +1,5 @@
 %%
-%% arch-tag: 9C4758FA-9D70-11D8-ABD2-000A957659CC
+%%
 %%
 
 -module(environ).

@@ -1,5 +1,3 @@
-% arch-tag: F8BEFD9C-A24E-11D8-913D-000A957659CC
-
 {application, env_alert,
         [{description, "Environmental alerts."},
          {vsn, "1.0"},

@@ -1,5 +1,5 @@
 %%
-%% arch-tag: 280D71B6-9F20-11D8-ACEE-000A957659CC
+%%
 %%
 
 -module(environ_utilities).

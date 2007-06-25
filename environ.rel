@@ -1,5 +1,3 @@
-% arch-tag: 345BEBDA-9E4E-11D8-B082-000A957659CC
-%
 % To make a boot from this:
 % systools:make_script("environ", [local]).
 %

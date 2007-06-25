@@ -1,6 +1,5 @@
 %%
 %% Copyright (c) 2006  Dustin Sallings <dustin@spy.net>
-%% arch-tag: 04A97B80-E323-423E-A57B-6EF316EBFF65
 %%
 
 -module(env_alert_mailer).

@@ -1,5 +1,5 @@
 %%
-%% arch-tag: F1E8B3F8-A24E-11D8-9BB7-000A957659CC
+%%
 %%
 
 -module(env_alert).

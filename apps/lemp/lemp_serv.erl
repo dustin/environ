@@ -1,5 +1,5 @@
 %%
-%% arch-tag: E318BE1E-9D38-11D8-996A-003065ABF26A
+%%
 %%
 
 -module(lemp_serv).

@@ -1,5 +1,5 @@
 %%
-%% arch-tag: A622F0A4-A232-11D8-9944-000A957659CC
+%%
 %%
 
 -module(temp_listener_app).

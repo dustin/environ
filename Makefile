@@ -1,5 +1,3 @@
-# arch-tag: AA622612-9F1C-11D8-8851-000A957659CC
-
 SHELL=/bin/sh
 
 DIRS=apps/temp_listener apps/lemp apps/env_alert

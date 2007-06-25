@@ -1,5 +1,5 @@
 %%
-%% arch-tag: BB8FE92A-9817-11D8-AD77-000A957659CC
+%%
 %%
 
 -module(temp_listener).

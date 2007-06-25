@@ -1,5 +1,5 @@
 %%
-%% arch-tag: 1D160B40-9D3B-11D8-8DF9-003065ABF26A
+%%
 %%
 
 -module(lemp_handler).

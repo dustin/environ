@@ -1,5 +1,5 @@
 %%
-%% arch-tag: 4FA4A3D7-A231-11D8-A34F-000A957659CC
+%%
 %%
 
 -module(lemp_serv_app).

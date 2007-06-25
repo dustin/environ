@@ -9,6 +9,7 @@ all: environ.boot
 tgz: environ.tar.gz
 
 ebins:
+	mkdir ebin
 	erl $(EFLAGS) -noshell -run make all -run init stop
 	cp src/*.app ebin
 
@@ -20,4 +21,4 @@ environ.tar.gz: environ.boot
 
 clean:
 	rm -f environ.{beam,boot,script} environ.tar.gz
-	rm -f ebin/*
+	rm -rf ebin

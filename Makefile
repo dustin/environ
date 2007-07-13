@@ -9,7 +9,7 @@ all: environ.boot
 tgz: environ.tar.gz
 
 ebins:
-	mkdir ebin
+	test -d ebin || mkdir ebin
 	erl $(EFLAGS) -noshell -run make all -run init stop
 	cp src/*.app ebin
 

@@ -1,6 +1,6 @@
 (^|/)\.hg($|/)
 (^|/)\.hgtags($|/)
 .*\.beam$
-^ebin/$
+^ebin/
 ^environ\.boot$
 ^environ\.script$

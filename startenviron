@@ -2,9 +2,9 @@
 
 # see the -detached flag
 
-# Cluster (rubik)
+# Cluster (purple)
 # ./startenviron \
-#   -sname temp -config configs/rubik -detached -noinput -boot environ
+#   -sname temp -config priv/configs/purple -detached -noinput -boot environ
 
 # Regular
 # ./startenviron -noinput -boot environ

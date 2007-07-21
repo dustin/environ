@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# interactive
+erl "$@" -sname temp -mnesia dir "\"$HOME/tmp/mnesia\"" \
+	-pa $HOME/lib/erlang/smtp_client-1.1/ebin/ \
+	-pa ebin -run setup_schema init_schema -run init stop

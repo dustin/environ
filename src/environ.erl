@@ -20,7 +20,6 @@ start(_Type, _Args) ->
 	ok = mnesia:start(),
 	ok = application:start(temp_listener),
 	ok = application:start(lemp_serv),
-	ok = application:start(smtp_client),
 	ok = application:start(env_alert),
 	{ok, self()}.
 

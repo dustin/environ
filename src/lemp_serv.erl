@@ -31,7 +31,7 @@ init(PortNum) ->
 
 % Accept incoming connections
 accept_loop(LS, Map, Count) ->
-	{ok, NS} = gen_tcp:accept(LS, 5000),
+	{ok, NS} = gen_tcp:accept(LS),
 	Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
 	gen_tcp:controlling_process(NS, Pid),
 	Pid ! go_ahead,

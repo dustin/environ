@@ -16,11 +16,11 @@ init([Pid|_Args]) ->
 	{ok, Pid}.
 
 % Get all of the alert recipients
-getRecipients() ->
+get_recipients() ->
 	environ_utilities:get_env(env_alert, notifications, []).
 
 % Find the range for the given device
-getRange(Name) ->
+get_range(Name) ->
 	Ranges = environ_utilities:get_env_dict(env_alert, ranges),
 	case dict:find(Name, Ranges) of
 		{ok, TheRange} -> TheRange;
@@ -30,7 +30,7 @@ getRange(Name) ->
 	end.
 
 % Check to see if this reading is out of range
-checkRange(Val, Range) ->
+check_range(Val, Range) ->
 	{Low, Hi} = Range,
 	case {Val > Low, Val < Hi} of
 		{true, true} ->
@@ -59,7 +59,7 @@ check_seen(Name, Val, Pid) ->
 		case E#therms.active of
 			false ->
 				error_logger:info_msg("~p came back @ ~p~n", [Name, Val]),
-				Pid ! {uncond_alert, getRecipients(),
+				Pid ! {uncond_alert, get_recipients(),
 					io_lib:format("Temperature alert: ~s came back", [Name]),
 					io_lib:format("~s came back, reading is ~.2f",
 						[Name, Val])};
@@ -80,7 +80,7 @@ handle_event({reading, _Key, Name, Val, _Vals}, Pid) ->
 	% Ping the owner
 	Pid ! ping,
 	% Check the range and get the new reading
-	case checkRange(Val, getRange(Name)) of
+	case check_range(Val, get_range(Name)) of
 		ok -> true;
 		Rv -> Pid ! {alert, Name, Val, Rv}
 	end,

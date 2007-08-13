@@ -3,7 +3,7 @@
 %%
 
 -module(env_alert).
--export([start/0, start_link/0, init/0, startHandler/1]).
+-export([start/0, start_link/0, init/0, start_handler/1]).
 
 -include("env_alert.hrl").
 
@@ -21,27 +21,25 @@ init() ->
 	% on some systems, bad things happen otherwise
 	case application:get_env(startup_alert_recipients) of
 		{ok, [First|Rest]} ->
-			AlertRv = (catch startupAlert([First|Rest])),
-			error_logger:error_msg("startupAlert rv:  ~p", [AlertRv]);
+			AlertRv = (catch startup_alert([First|Rest])),
+			error_logger:error_msg("startup_alert rv:  ~p", [AlertRv]);
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,
-	startHandler(self()),
+	start_handler(self()),
 	% Send the cleanup message
 	timer:send_after(1000, cleanup),
 	loop().
 
 % Find the maximum TTL age for the named device
-getMaxTTL(Name) ->
+get_max_ttl(Name) ->
 	Ttls = environ_utilities:get_env_dict(env_alert, max_ttl_ages),
 	case dict:find(Name, Ttls) of
 		{ok, Rv} -> Rv;
-		_ ->
-			{ok, Rv} = dict:find("--default--", Ttls),
-			Rv
+		_ -> dict:fetch("--default--", Ttls)
 	end.
 
-startHandler(Owner) ->
+start_handler(Owner) ->
 	% Add the handler
 	case temp_listener:add_sup_handler(env_alert_handler, [Owner]) of
 		ok ->
@@ -54,7 +52,7 @@ startHandler(Owner) ->
 	end.
 
 % Generic alert send function
-genAlert(Recips, Subject, Msg) ->
+gen_alert(Recips, Subject, Msg) ->
 	Server = environ_utilities:get_env(mail_server, "mail"),
 	lists:foreach(fun (To) ->
 		env_alert_mailer:send_message(To, Server, Subject, Msg)
@@ -68,18 +66,18 @@ alert(Name, Val, Type) ->
 	Body = io_lib:format("~s:~.2f (~p)~n", [Name, Val, Type]),
 	% Send email to everyone who should receive one
 	Recips = environ_utilities:get_env(notifications, []),
-	genAlert(Recips, Subject, Body),
+	gen_alert(Recips, Subject, Body),
 	% Update mnesia so we note the last time we sent this particular alert
 	ok = mnesia:write(#alert_state{id=Name, reading=Val, lastalert=now()}).
 
 % Alert sent upon startup to indicate the system is coming up
-startupAlert(Recips) ->
-	genAlert(Recips, "Environ startup",
+startup_alert(Recips) ->
+	gen_alert(Recips, "Environ startup",
 		io_lib:format("environ started on ~p~n", [node()])).
 
 % A thermometer has been found to be out of range.  We will send out an alert
 % if we haven't sent one out too recently.  Let's find out...
-outOfRange(Name, Val, Type) ->
+out_of_range(Name, Val, Type) ->
 	error_logger:error_msg("WARNING:  Temperature out of range!  ~p ~p ~p",
 		[Name, Val, Type]),
 	% Find the minimum amount of time that must pass between alerts
@@ -107,18 +105,18 @@ outOfRange(Name, Val, Type) ->
 	end,
 	{atomic, _ResultOfFun} = mnesia:transaction(F).
 
-doCleanup() ->
+do_cleanup() ->
 	% error_logger:info_msg("Cleaning up~n", []),
 	Now = now(),
 	F = fun() ->
 		lists:foreach(fun(I) ->
 				% Check each record to see if it's too old.
 				TAge = timer:now_diff(Now, I#therms.ts) / 1000000,
-				MaxAge = getMaxTTL(I#therms.id),
+				MaxAge = get_max_ttl(I#therms.id),
 				if (TAge > MaxAge) ->
 					error_logger:error_msg("~p is too old!  ~psecs",
 						[I#therms.id, TAge]),
-					genAlert(environ_utilities:get_env(notifications, []),
+					gen_alert(environ_utilities:get_env(notifications, []),
 						io_lib:format("Temperature alert: ~s is too old",
 							[I#therms.id]),
 						io_lib:format("~s is too old, last saw ~.2f (~p > ~p)",
@@ -140,7 +138,7 @@ loop() ->
 		ping ->
 			loop();
 		cleanup ->
-			doCleanup(),
+			do_cleanup(),
 			% Reschedule
 			timer:send_after(60000, cleanup),
 			loop();
@@ -148,13 +146,13 @@ loop() ->
 		{alert, Name, Val, RangeRv} ->
 			error_logger:error_msg("Got alert:  ~p ~p ~p",
 				[Name, Val, RangeRv]),
-			outOfRange(Name, Val, RangeRv),
+			out_of_range(Name, Val, RangeRv),
 			loop();
 		% An unconditional alert (no time check)
 		{uncond_alert, Recips, Subject, Message} ->
 			% error_logger:error_msg("Got unconditional alert:  ~p ~p ~p",
 			% 	[Recips, Subject, Message]),
-			genAlert(Recips, Subject, Message),
+			gen_alert(Recips, Subject, Message),
 			loop();
 		% event handler shutdown notification
 		{gen_event_EXIT, env_alert_handler, shutdown} ->

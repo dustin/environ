@@ -31,14 +31,10 @@ init(PortNum) ->
 
 % Accept incoming connections
 accept_loop(LS, Map, Count) ->
-	case gen_tcp:accept(LS, 5000) of
-		{ok, NS} ->
-			Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
-			gen_tcp:controlling_process(NS, Pid),
-			Pid ! go_ahead;
-		{error, timeout} ->
-			ok
-	end,
+	{ok, NS} = gen_tcp:accept(LS, 5000),
+	Pid = spawn(?MODULE, lemp, [NS, Map, Count]),
+	gen_tcp:controlling_process(NS, Pid),
+	Pid ! go_ahead,
 	% Check to see if there's a stop message.
 	receive
 		stop ->

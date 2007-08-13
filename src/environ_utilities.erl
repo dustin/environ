@@ -24,10 +24,7 @@ get_env_dict(Which) ->
 
 % get a dict from an env list of key/value mappings
 get_env_dict(App, Which) ->
-	lists:foldl(fun ({K, V}, Acc) ->
-			dict:update(K, fun(_) -> V end, V, Acc)
-		end,
-		dict:new(), get_env(App, Which, [])).
+	dict:from_list(get_env(App, Which, [])).
 
 % Get the serial number -> name map for this application
 get_therm_map() ->

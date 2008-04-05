@@ -20,5 +20,5 @@ environ.tar.gz: environ.boot
 	erl $(EFLAGS) -noshell -run systools make_tar environ -run init stop
 
 clean:
-	rm -f environ.{beam,boot,script} environ.tar.gz
+	rm -f environ.beam environ.boot environ.script environ.tar.gz
 	rm -rf ebin

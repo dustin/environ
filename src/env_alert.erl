@@ -56,9 +56,11 @@ gen_alert(Recips, Subject, Msg) ->
 	BeanstalkServer = environ_utilities:get_env(beanstalk_server, "localhost"),
 	BeanstalkPort = environ_utilities:get_env(beanstalk_server, 11300),
 	{ok, Socket} = beanstalk:connect(BeanstalkServer, BeanstalkPort),
-	beanstalk:use(environ_utilities:get_env(beanstalk_tube, "environ"), Socket),
-	{inserted, _JobID} = beanstalk:put(beanstalk_job:new(Subject, Msg), Socket),
-	gen_tcp:close(Socket),
+	{using, "environ"} = beanstalk:use(
+		environ_utilities:get_env(beanstalk_tube, "environ"), Socket),
+	{inserted, _JobID} = beanstalk:put(
+		beanstalk_job:new(Subject ++ "\n" ++ Msg), Socket),
+	ok = gen_tcp:close(Socket),
 	MailServer = environ_utilities:get_env(mail_server, "mail"),
 	lists:foreach(fun (To) ->
 		env_alert_mailer:send_message(To, MailServer, Subject, Msg)

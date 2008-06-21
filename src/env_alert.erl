@@ -53,9 +53,9 @@ start_handler(Owner) ->
 
 % Generic alert send function
 gen_alert(Recips, Subject, Msg) ->
-	Server = environ_utilities:get_env(mail_server, "mail"),
+	MailServer = environ_utilities:get_env(mail_server, "mail"),
 	lists:foreach(fun (To) ->
-		env_alert_mailer:send_message(To, Server, Subject, Msg)
+		env_alert_mailer:send_message(To, MailServer, Subject, Msg)
 		end, Recips).
 
 % Send an alert -- this only happens within a mnesia transaction

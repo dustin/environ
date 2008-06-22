@@ -58,8 +58,9 @@ gen_alert(Recips, Subject, Msg) ->
 	{ok, Socket} = beanstalk:connect(BeanstalkServer, BeanstalkPort),
 	{using, "environ"} = beanstalk:use(
 		environ_utilities:get_env(beanstalk_tube, "environ"), Socket),
+	% Flattening the list because it came from formats...
 	{inserted, _JobID} = beanstalk:put(
-		beanstalk_job:new(Subject ++ "\n" ++ Msg), Socket),
+		beanstalk_job:new(lists:flatten(Subject ++ "\n" ++ Msg)), Socket),
 	ok = gen_tcp:close(Socket),
 	MailServer = environ_utilities:get_env(mail_server, "mail"),
 	lists:foreach(fun (To) ->

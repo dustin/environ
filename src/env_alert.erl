@@ -51,8 +51,24 @@ start_handler(Owner) ->
 			exit(Reason)
 	end.
 
-% Generic alert send function
-gen_alert(Recips, Subject, Msg) ->
+% Send an alert via the beanstalk -> XMPP gateway
+gen_alert_xmpp(Subject, Msg) ->
+	BeanstalkServer = environ_utilities:get_env(beanstalk_server, "localhost"),
+	BeanstalkPort = environ_utilities:get_env(beanstalk_server, 11300),
+	{ok, Socket} = beanstalk:connect(BeanstalkServer, BeanstalkPort),
+	{using, "environ"} = beanstalk:use(
+		environ_utilities:get_env(beanstalk_tube, "westspyxmpp"), Socket),
+	% Flattening the list because it came from formats...
+	Recips = environ_utilities:get_env(xmpp_notifications, []),
+	lists:foreach(fun (To) ->
+		{inserted, _JobID} = beanstalk:put(
+			beanstalk_job:new(lists:flatten(
+				To ++ " " ++ Subject ++ "\n" ++ Msg)), Socket)
+			end, Recips),
+	ok = gen_tcp:close(Socket).
+
+% XXX:  This will likely go away when twitter's xmpp bot is back.
+gen_alert_twitter(Subject, Msg) ->
 	BeanstalkServer = environ_utilities:get_env(beanstalk_server, "localhost"),
 	BeanstalkPort = environ_utilities:get_env(beanstalk_server, 11300),
 	{ok, Socket} = beanstalk:connect(BeanstalkServer, BeanstalkPort),
@@ -61,7 +77,12 @@ gen_alert(Recips, Subject, Msg) ->
 	% Flattening the list because it came from formats...
 	{inserted, _JobID} = beanstalk:put(
 		beanstalk_job:new(lists:flatten(Subject ++ "\n" ++ Msg)), Socket),
-	ok = gen_tcp:close(Socket),
+	ok = gen_tcp:close(Socket).
+
+% Generic alert send function
+gen_alert(Recips, Subject, Msg) ->
+	gen_alert_xmpp(Subject, Msg),
+	gen_alert_twitter(Subject, Msg),
 	MailServer = environ_utilities:get_env(mail_server, "mail"),
 	lists:foreach(fun (To) ->
 		env_alert_mailer:send_message(To, MailServer, Subject, Msg)

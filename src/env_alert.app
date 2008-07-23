@@ -27,7 +27,7 @@
 					"dustin@spy.net", "noelani@spy.net"
 				]},
 				{xmpp_notifications, [
-					"dustin@sallings.org"
+					"tempalert"
 				]},
 				{startup_alert_recipients, [
 					"dustin@spy.net"

@@ -14,10 +14,10 @@
 					{"2183110000C034BB", 612000}
 				]},
 				{ranges, [
-					{"machineroom", {13, 27}},
-					{"bedroom", {8, 31}},
-					{"livingroom", {8, 30}},
-					{"guestroom", {8, 30}},
+					{"machineroom", {5, 27}},
+					{"bedroom", {4, 31}},
+					{"livingroom", {5, 30}},
+					{"guestroom", {5, 30}},
 					{"purple_mb", {1, 80}},
 					{"purple_cpu", {1, 80}},
 					{"purple_chip", {1, 80}},

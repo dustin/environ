@@ -10,13 +10,13 @@
 start() ->
 	start(8181).
 
-start(PortNum) when integer(PortNum) ->
+start(PortNum) when is_integer(PortNum) ->
 	{ok, spawn(?MODULE, init, [PortNum])}.
 
 start_link() ->
 	start_link(8181).
 
-start_link(PortNum) when integer(PortNum) ->
+start_link(PortNum) when is_integer(PortNum) ->
 	{ok, spawn_link(?MODULE, init, [PortNum])}.
 
 %
@@ -84,9 +84,9 @@ lemp_exit(_Reason, Id) ->
 	exit(closed).
 
 % Send a message with its status and all
-lemp_send(Socket, Status, Message) when list(Status) ->
+lemp_send(Socket, Status, Message) when is_list(Status) ->
 	gen_tcp:send(Socket, [Status, " ", Message, <<13,10>>]);
-lemp_send(Socket, Status, Message) when integer(Status) ->
+lemp_send(Socket, Status, Message) when is_integer(Status) ->
 	lemp_send(Socket, integer_to_list(Status), Message).
 
 % Message dispatch for the server processes

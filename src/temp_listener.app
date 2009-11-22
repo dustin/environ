@@ -12,10 +12,7 @@
 			{"10C8892A00000096", "livingroom"},
 			{"101D8A2A000000F7", "machineroom"},
 			{"10E8C214000000E4", "garage"},
-			{"1013A51E00000035", "guestroom"},
-			{"purple_mb", "purple_mb"},
-			{"purple_cpu", "purple_cpu"},
-			{"purple_chip", "purple_chip"}
+			{"1013A51E00000035", "guestroom"}
 			% {"2183110000C034BB", "dustinkeychain"},
 			% {"21508400004025AF", "kitchen"},
 			]}

@@ -17,13 +17,14 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting env_alert~n", []),
-	env_alert_mailer:start_link(),
-	error_logger:info_msg("Started mailer.~n", []),
 	supervisor:start_link(gen_sup, [
 			{{one_for_one, 2, 60},
-					[{env_alert, {env_alert, start_link, []},
+					[
+                     {env_alert_mailer, {env_alert_mailer, start_link, []},
+						permanent, 5000, worker, [env_alert_mailer]},
+                     {env_alert, {env_alert, start_link, []},
 						permanent, 5000, worker, [env_alert]}
-					]}
+                    ]}
 		]).
 
 stop(_State) ->

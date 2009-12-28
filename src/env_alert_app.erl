@@ -17,8 +17,6 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting env_alert~n", []),
-	mnesia:start(),
-	error_logger:info_msg("Started mnesia~n", []),
 	env_alert_mailer:start_link(),
 	error_logger:info_msg("Started mailer.~n", []),
 	supervisor:start_link(gen_sup, [

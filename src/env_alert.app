@@ -4,7 +4,7 @@
          {modules, [ env_alert_app, env_alert, env_alert_handler ]},
 
          {registered, []},
-         {applications, [kernel,stdlib,temp_listener,smtp_client]},
+         {applications, [kernel,stdlib,temp_listener,smtp_client,mnesia]},
 		 {mod, {env_alert_app, []}},
 		 {env, [
 		 		{min_alert_interval, 3600},

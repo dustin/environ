@@ -8,10 +8,11 @@
 	{"environ_rel", "1.0"},
 	{erts, "5.2.3.6"},
 	[	{kernel, "2.13.4"}, {stdlib, "1.16.4"},
-		{environ, "1.0", temporary},
+		{mnesia, "4.4.12", permanent},
+		{environ, "1.0", permanent},
 		{smtp_client, "1.1", temporary},
 		{temp_listener, "1.0", permanent},
 		{lemp_serv, "1.0", permanent},
-		{env_alert, "1.0", permanent
-		}]
+		{env_alert, "1.0", permanent}
+        ]
 }.

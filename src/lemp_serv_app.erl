@@ -23,7 +23,7 @@ start(_Type, _Args) ->
                                        permanent, 5000, worker, [lemp_serv]}]}
                                     ]).
 
-stop(LempPid) ->
+stop(_) ->
 	error_logger:info_msg("Stopping lemp_serv_app~n", []),
 	ok.
 

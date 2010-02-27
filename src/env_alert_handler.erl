@@ -10,10 +10,12 @@
 	code_change/3, terminate/2]).
 -behavior(gen_event).
 
+-record(state, {}).
+
 % Init
-init([Pid|_Args]) ->
+init([]) ->
 	error_logger:info_msg("Starting env_alert_handler.", []),
-	{ok, Pid}.
+	{ok, #state{}}.
 
 % Get all of the alert recipients
 get_recipients() ->
@@ -51,7 +53,7 @@ check_range(Val, Range) ->
 % talked to us, but fallen off the bus.  We send a notification when a device
 % falls off the bus, so this gives us the opportunity to send another
 % notification when a device goes back on the bus
-check_seen(Name, Val, Pid) ->
+check_seen(Name, Val) ->
 	case mnesia:read({therms, Name}) of
 		[] ->
 			error_logger:info_msg("New device:  ~p @ ~p", [Name, Val]);
@@ -59,35 +61,35 @@ check_seen(Name, Val, Pid) ->
 		case E#therms.active of
 			false ->
 				error_logger:info_msg("~p came back @ ~p~n", [Name, Val]),
-				Pid ! {uncond_alert, get_recipients(),
-					io_lib:format("Temperature alert: ~s came back", [Name]),
-					io_lib:format("~s came back, reading is ~.2f",
-						[Name, Val])};
+                env_alert:uncond_alert(
+                  get_recipients(),
+                  io_lib:format("Temperature alert: ~s came back", [Name]),
+                  io_lib:format("~s came back, reading is ~.2f",
+                                [Name, Val]));
 			true -> true
 		end
 	end.
 
-updateReading(Name, Val, Pid) ->
+updateReading(Name, Val) ->
 	% error_logger:info_msg("Updating reading of ~p to ~p~n", [Name, Val]),
-	check_seen(Name, Val, Pid),
+	check_seen(Name, Val),
 	mnesia:write(#therms{id=Name, active=true, reading=Val, ts=now()}).
 
 % Handle a reading
-handle_event({reading, _Key, Name, Val, _Vals}, Pid) ->
+handle_event({reading, _Key, Name, Val, _Vals}, State) ->
 	% Find the name of the device this event is regarding
 	% error_logger:info_msg("Mailer got reading:  ~p @ ~p range is ~p",
 		% [Name, Val, Range]),
-	% Ping the owner
-	Pid ! ping,
+    env_alert:ping(),
 	% Check the range and get the new reading
 	case check_range(Val, get_range(Name)) of
 		ok -> true;
-		Rv -> Pid ! {alert, Name, Val, Rv}
+        Rv -> env_alert:alert(Name, Val, Rv)
 	end,
 	% Update the reading
 	{atomic, ok} = mnesia:transaction(fun() ->
-		updateReading(Name, Val, Pid) end),
-	{ok, Pid};
+		updateReading(Name, Val) end),
+	{ok, State};
 
 handle_event(Ev, State) ->
 	error_logger:error_msg("env_alert: unhandled event:  ~p", [Ev]),

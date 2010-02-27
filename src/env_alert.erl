@@ -1,21 +1,26 @@
-%%
-%%
-%%
-
 -module(env_alert).
--export([start/0, start_link/0, init/0, start_handler/1]).
+
+-behaviour(gen_server).
+
+%% API
+-export([start_link/0,
+         ping/0, uncond_alert/3, alert/3]).
+
+%% gen_server callbacks
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
+         terminate/2, code_change/3]).
+
+-record(state, {}).
 
 -include("env_alert.hrl").
 
-% Startup and stuff
-start() ->
-	{ok, spawn(?MODULE, init, [])}.
+-define(TIMEOUT, 120000).
 
 start_link() ->
-	{ok, spawn_link(?MODULE, init, [])}.
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [],
+                          [{timeout, ?TIMEOUT}]).
 
-% Init
-init() ->
+init([]) ->
 	error_logger:info_msg("Starting env_alert.", []),
 	% Send the startup alert in three seconds...I'm not sure why just yet, but
 	% on some systems, bad things happen otherwise
@@ -29,7 +34,34 @@ init() ->
 	start_handler(self()),
 	% Send the cleanup message
 	timer:send_after(1000, cleanup),
-	loop().
+    {ok, #state{}}.
+
+handle_call(_Request, _From, State) ->
+    Reply = ok,
+    {reply, Reply, State}.
+
+handle_cast(ping, State) ->
+    {noreply, State};
+handle_cast({uncond_alert, Recips, Subject, Message}, State) ->
+    gen_alert(Recips, Subject, Message),
+    {noreply, State};
+handle_cast({alert, Name, Val, RangeRv}, State) ->
+    error_logger:error_msg("Got alert:  ~p ~p ~p",
+                           [Name, Val, RangeRv]),
+    out_of_range(Name, Val, RangeRv),
+    {noreply, State}.
+
+handle_info(cleanup, State) ->
+    do_cleanup(),
+    %% Reschedule
+    timer:send_after(60000, cleanup),
+    {noreply, State}.
+
+terminate(_Reason, _State) ->
+    ok.
+
+code_change(_OldVsn, State, _Extra) ->
+    {ok, State}.
 
 % Find the maximum TTL age for the named device
 get_max_ttl(Name) ->
@@ -87,7 +119,7 @@ gen_alert(Recips, Subject, Msg) ->
 		end, Recips).
 
 % Send an alert -- this only happens within a mnesia transaction
-alert(Name, Val, Type) ->
+do_alert(Name, Val, Type) ->
 	error_logger:error_msg("Sending an alert for ~p (~p when  ~p)",
 		[Name, Val, Type]),
 	Subject = "Temperature alert:  " ++ Name,
@@ -115,7 +147,7 @@ out_of_range(Name, Val, Type) ->
 	F = fun() ->
 		case mnesia:read({alert_state, Name}) of
 		[] ->
-			alert(Name, Val, Type);
+			do_alert(Name, Val, Type);
 		[E] -> 
 			Tdiff = timer:now_diff(
 				now(), E#alert_state.lastalert) / 1000000,
@@ -123,7 +155,7 @@ out_of_range(Name, Val, Type) ->
 					error_logger:info_msg(
 						"Last alert for ~p sent ~ps ago, sending",
 							[Name, Tdiff]),
-					alert(Name, Val, Type);
+					do_alert(Name, Val, Type);
 				true ->
 					error_logger:info_msg(
 						"Last alert for ~p sent ~ps ago, holding",
@@ -160,36 +192,11 @@ do_cleanup() ->
 	end,
 	{atomic, _ResultOfFun} = mnesia:transaction(F).
 
-loop() ->
-	receive
-		% Ping on a reading, just to make sure it's still alive
-		ping ->
-			loop();
-		cleanup ->
-			do_cleanup(),
-			% Reschedule
-			timer:send_after(60000, cleanup),
-			loop();
-		% An alert
-		{alert, Name, Val, RangeRv} ->
-			error_logger:error_msg("Got alert:  ~p ~p ~p",
-				[Name, Val, RangeRv]),
-			out_of_range(Name, Val, RangeRv),
-			loop();
-		% An unconditional alert (no time check)
-		{uncond_alert, Recips, Subject, Message} ->
-			% error_logger:error_msg("Got unconditional alert:  ~p ~p ~p",
-			% 	[Recips, Subject, Message]),
-			gen_alert(Recips, Subject, Message),
-			loop();
-		% event handler shutdown notification
-		{gen_event_EXIT, env_alert_handler, shutdown} ->
-			error_logger:error_msg("env_alert_handler shutdown, stopping");
-		% all other events
-		Unknown ->
-			error_logger:error_msg("Got unknown message:  ~p", [Unknown])
-		after 120000 ->
-			Reason = "Too long without a message.",
-			error_logger:error_msg("env_alert: Exiting:  ~p", [Reason]),
-			exit(Reason)
-	end.
+ping() ->
+    gen_server:cast(?MODULE, ping).
+
+uncond_alert(To, Subj, Msg) ->
+    gen_server:cast(?MODULE, {uncond_alert, To, Subj, Msg}).
+
+alert(Name, Val, Rv) ->
+    gen_server:cast(?MODULE, {alert, Name, Val, Rv}).

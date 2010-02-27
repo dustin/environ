@@ -10,6 +10,6 @@
 # ./startenviron -noinput -boot environ
 
 # interactive
-erl "$@" -mnesia dir "\"$HOME/tmp/mnesia\"" \
+exec erl "$@" -mnesia dir "\"$HOME/tmp/mnesia\"" \
 	-pa $HOME/lib/erlang/smtp_client-1.1/ebin/ \
 	-pa ebin -boot environ

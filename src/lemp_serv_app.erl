@@ -17,11 +17,14 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting lemp_serv", []),
-	lemp_serv:start_link().
+    supervisor:start_link(gen_sup, [
+                                    {{one_for_one, 2, 60},
+                                     [{lemp_serv, {lemp_serv, start_link, []},
+                                       permanent, 5000, worker, [lemp_serv]}]}
+                                    ]).
 
 stop(LempPid) ->
 	error_logger:info_msg("Stopping lemp_serv_app~n", []),
-	LempPid ! stop,
 	ok.
 
 config_change(Changed, New, Removed) ->

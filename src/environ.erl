@@ -17,7 +17,7 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting environ", []),
-    ok = application:start(sasl).
+    ok = application:start(sasl),
 	ok = application:start(mnesia),
 	ok = application:start(temp_listener),
 	ok = application:start(lemp_serv),

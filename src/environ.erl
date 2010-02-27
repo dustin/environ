@@ -18,7 +18,7 @@ start() ->
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting environ", []),
     ok = application:start(sasl).
-	ok = mnesia:start(),
+	ok = application:start(mnesia),
 	ok = application:start(temp_listener),
 	ok = application:start(lemp_serv),
 	ok = application:start(env_alert),

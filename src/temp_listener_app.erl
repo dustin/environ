@@ -19,8 +19,11 @@ start(Type, Args) ->
 	error_logger:info_msg("Starting temp_listener (~p, ~p)~n", [Type, Args]),
 	supervisor:start_link(gen_sup, [
 			{{one_for_one, 2, 60},
-				[{temp_listener, {temp_listener, start_link, []},
-					permanent, 5000, worker, [temp_listener]}
+             [{temp_listener_events,
+               {gen_event, start_link, [{local, temp_listener_events}]},
+               permanent, 10, worker, []},
+              {temp_listener, {temp_listener, start_link, []},
+               permanent, 10, worker, [temp_listener]}
 				]}]).
 
 stop(State) ->

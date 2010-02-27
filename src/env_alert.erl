@@ -31,7 +31,7 @@ init([]) ->
 		_ ->
 			error_logger:error_msg("No startup_alert_recipients defined", [])
 	end,
-	start_handler(self()),
+	start_handler(),
 	% Send the cleanup message
 	timer:send_after(1000, cleanup),
     {ok, #state{}}.
@@ -71,9 +71,9 @@ get_max_ttl(Name) ->
 		_ -> dict:fetch("--default--", Ttls)
 	end.
 
-start_handler(Owner) ->
+start_handler() ->
 	% Add the handler
-	case temp_listener:add_sup_handler(env_alert_handler, [Owner]) of
+	case temp_listener:add_sup_handler(env_alert_handler, []) of
 		ok ->
 			error_logger:error_msg("Started new env_alert_handler"),
 			ok;

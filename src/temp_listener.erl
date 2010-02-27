@@ -21,7 +21,6 @@ init() ->
 	% let me know if anything tries to exit
 	process_flag(trap_exit, true),
 	% register my event handler
-	{ok, _Pid} = gen_event:start_link({local, temp_listener_events}),
 	{ok, GAddr}=inet:getaddr("225.0.0.37", inet),
 	{ok, LAddr}=inet:getaddr("0.0.0.0", inet),
 	{ok, Socket} = gen_udp:open(6789, [{add_membership,{GAddr,LAddr}}]),

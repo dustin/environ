@@ -17,12 +17,18 @@ start() ->
 % application stuff
 start(_Type, _Args) ->
 	error_logger:info_msg("Starting environ", []),
-    ok = application:start(sasl),
-	ok = application:start(mnesia),
-	ok = application:start(temp_listener),
-	ok = application:start(lemp_serv),
-	ok = application:start(env_alert),
+    ok = do_start(sasl),
+	ok = do_start(mnesia),
+	ok = do_start(temp_listener),
+	ok = do_start(lemp_serv),
+	ok = do_start(env_alert),
 	{ok, self()}.
+
+do_start(App) ->
+    case application:start(App) of
+        ok -> ok;
+        {error, {already_started, App}} -> ok
+    end.
 
 stop(_State) ->
 	stopped = mnesia:stop(),

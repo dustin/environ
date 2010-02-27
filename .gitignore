@@ -1,5 +1,6 @@
+*~
 ebin
 environ.boot
-environ.script
 environ.log
+environ.script
 erl_crash.dump

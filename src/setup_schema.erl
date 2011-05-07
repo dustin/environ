@@ -8,12 +8,17 @@
 -include("env_alert.hrl").
 
 db_nodes () ->
-	[temp@purple].
+	[temp@purple, temp@army].
 
 init_schema() ->
+	application:start(sasl),
+	pong = net_adm:ping(temp@army),
 	mnesia:create_schema(db_nodes()),
 	ok = application:start(mnesia),
+	ok = rpc:call(temp@army, application, start, [mnesia]),
 	init_tables(),
+	mnesia:info(),
+	rpc:call(temp@army, mnesia, info, []),
 	ok = application:stop(mnesia).
 
 init_tables() ->

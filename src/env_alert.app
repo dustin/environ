@@ -24,7 +24,7 @@
 					{"--default--", {-50,50}}
 				]},
 				{notifications, [
-					"dustin@spy.net", "noelani@spy.net"
+					"dustin@spy.net"
 				]},
 				{xmpp_notifications, [
 					"tempalert"

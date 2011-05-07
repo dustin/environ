@@ -29,7 +29,6 @@ start(_Type, _Args) ->
 
 stop(_State) ->
 	error_logger:info_msg("Stopping env_alert_app~n", []),
-	mnesia:stop(),
 	env_alert_mailer:stop(),
 	error_logger:info_msg("Completed stop of env_alert_app~n", []),
 	ok.
